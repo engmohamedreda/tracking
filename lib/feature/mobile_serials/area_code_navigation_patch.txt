@@ -1,0 +1,21 @@
+If you want to open Mobile Serials when tapping an Area Code card, import:
+
+import '../../../mobile_serials/presentation/view/get_mobile_serials_screen.dart';
+
+Then add onTap to the ListTile inside GetAreaCodeScreen:
+
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => GetMobileSerialsScreen(
+        areaCodeId: areaCode.id,
+        areaCode: areaCode.code,
+      ),
+    ),
+  );
+},
+
+Or use the ready combined screen:
+
+AreaCodeMobileSerialsScreen()

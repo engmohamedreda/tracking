@@ -1,0 +1,1456 @@
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../core/helper/di/di.dart';
+import '../../cubit/create_survey_cubit.dart';
+import '../../cubit/create_survey_state.dart';
+import '../../model/survey_answer_request.dart';
+import '../../model/survey_attachment_request.dart';
+
+class CreateSurveyQuestionInput {
+  final int id;
+  final String title;
+
+  const CreateSurveyQuestionInput({
+    required this.id,
+    required this.title,
+  });
+}
+
+class CreateSurveyScreen extends StatefulWidget {
+  final int companyId;
+  final int brandId;
+  final int mobileId;
+  final int representativeId;
+  final int areaId;
+  final int ticketId;
+  final List<CreateSurveyQuestionInput> questions;
+  final String userId;
+  final String status;
+  final String initialNote;
+  final List<SurveyAttachmentRequest> attachments;
+
+  const CreateSurveyScreen({
+    super.key,
+    required this.companyId,
+    required this.brandId,
+    required this.mobileId,
+    required this.representativeId,
+    required this.areaId,
+    required this.ticketId,
+    required this.questions,
+    this.userId = '',
+    this.status = '',
+    this.initialNote = '',
+    this.attachments = const [],
+  });
+
+  @override
+  State<CreateSurveyScreen> createState() => _CreateSurveyScreenState();
+}
+
+class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
+  final TextEditingController noteController = TextEditingController();
+  final ImagePicker imagePicker = ImagePicker();
+  final Map<int, bool> answers = {};
+  late final List<SurveyAttachmentRequest> selectedAttachments;
+
+  static const String fixedDateText = '2026-05-23T06:36:23.928Z';
+
+  @override
+  void initState() {
+    super.initState();
+    noteController.text = widget.initialNote;
+    selectedAttachments = List<SurveyAttachmentRequest>.from(widget.attachments);
+
+    for (final question in widget.questions) {
+      answers[question.id] = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    noteController.dispose();
+    super.dispose();
+  }
+
+  int get yesCount => answers.values.where((value) => value).length;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<CreateSurveyCubit>(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7FB),
+        appBar: AppBar(
+          title: const Text('Survey'),
+          actions: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 18),
+              child: Center(
+                child: Chip(
+                  avatar: const Icon(Icons.confirmation_number_outlined, size: 18),
+                  label: Text('Ticket ${widget.ticketId}'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: BlocConsumer<CreateSurveyCubit, CreateSurveyState>(
+          listener: (context, state) {
+            if (state is CreateSurveySuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.response.message)),
+              );
+              Navigator.pop(context, true);
+            }
+
+            if (state is CreateSurveyError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.failure.errorMsg)),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is CreateSurveyLoading;
+
+            return Stack(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1240),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(24, 18, 24, 120),
+                            children: [
+                              _SurveyHeader(
+                                status: widget.status,
+                                ticketId: widget.ticketId,
+                                questionsCount: widget.questions.length,
+                                yesCount: yesCount,
+                                attachmentsCount: selectedAttachments.length,
+                              ),
+                              const SizedBox(height: 18),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final isWide = constraints.maxWidth >= 960;
+                                  final sideColumn = Column(
+                                    children: [
+                                      _SurveyDataCard(
+                                        companyId: widget.companyId,
+                                        brandId: widget.brandId,
+                                        mobileId: widget.mobileId,
+                                        representativeId: widget.representativeId,
+                                        areaId: widget.areaId,
+                                        ticketId: widget.ticketId,
+                                        status: widget.status,
+                                        fixedDateText: fixedDateText,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _NoteCard(
+                                        controller: noteController,
+                                        isLoading: isLoading,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _AttachmentsCard(
+                                        attachments: selectedAttachments,
+                                        isLoading: isLoading,
+                                        onPickGallery: _pickImagesFromGallery,
+                                        onPickCamera: _pickImageFromCamera,
+                                        onRemove: _removeAttachment,
+                                      ),
+                                    ],
+                                  );
+
+                                  final questionsColumn = _QuestionsCard(
+                                    questions: widget.questions,
+                                    answers: answers,
+                                    isLoading: isLoading,
+                                    onChanged: (questionId, value) {
+                                      setState(() {
+                                        answers[questionId] = value;
+                                      });
+                                    },
+                                  );
+
+                                  if (!isWide) {
+                                    return Column(
+                                      children: [
+                                        sideColumn,
+                                        const SizedBox(height: 16),
+                                        questionsColumn,
+                                      ],
+                                    );
+                                  }
+
+                                  return Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(flex: 4, child: sideColumn),
+                                      const SizedBox(width: 16),
+                                      Expanded(flex: 7, child: questionsColumn),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        _SubmitBar(
+                          isLoading: isLoading,
+                          questionsCount: widget.questions.length,
+                          yesCount: yesCount,
+                          imagesCount: selectedAttachments.length,
+                          onSubmit: () => _submit(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: const Color(0x660F172A),
+                      child: const Center(
+                        child: _LoadingDialog(message: 'Saving survey...'),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImagesFromGallery() async {
+    final images = await imagePicker.pickMultiImage(imageQuality: 80);
+    if (images.isEmpty) return;
+
+    final pickedAttachments = <SurveyAttachmentRequest>[];
+
+    for (final image in images) {
+      final bytes = await image.readAsBytes();
+      pickedAttachments.add(
+        SurveyAttachmentRequest(
+          fileName: image.name,
+          bytes: bytes,
+        ),
+      );
+    }
+
+    setState(() {
+      selectedAttachments.addAll(pickedAttachments);
+    });
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    final attachment = await showDialog<SurveyAttachmentRequest>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _ExternalWebCameraDialog(),
+    );
+
+    if (attachment == null) return;
+
+    setState(() {
+      selectedAttachments.add(attachment);
+    });
+  }
+
+  void _removeAttachment(SurveyAttachmentRequest attachment) {
+    setState(() {
+      selectedAttachments.remove(attachment);
+    });
+  }
+
+  void _submit(BuildContext context) {
+    if (widget.questions.isEmpty) {
+      _showMessage('مفيش أسئلة استبيان جاهزة');
+      return;
+    }
+
+    if (selectedAttachments.isEmpty) {
+      _showMessage('اختار صورة واحدة على الأقل قبل الحفظ');
+      return;
+    }
+
+    final surveyAnswers = widget.questions.map((question) {
+      return SurveyAnswerRequest(
+        id: 0,
+        title: question.title,
+        answer: answers[question.id] ?? false,
+        questionId: question.id,
+      );
+    }).toList();
+
+    context.read<CreateSurveyCubit>().createSurveyFromFlow(
+      companyId: widget.companyId,
+      brandId: widget.brandId,
+      mobileId: widget.mobileId,
+      userId: widget.userId,
+      representativeId: widget.representativeId,
+      areaId: widget.areaId,
+      ticketId: widget.ticketId,
+      surveyAnswers: surveyAnswers,
+      note: noteController.text.trim(),
+      status: widget.status,
+      surveyAttachments: selectedAttachments,
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+
+class _ExternalWebCameraDialog extends StatefulWidget {
+  const _ExternalWebCameraDialog();
+
+  @override
+  State<_ExternalWebCameraDialog> createState() => _ExternalWebCameraDialogState();
+}
+
+class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
+  late final html.VideoElement _videoElement;
+  late final String _viewType;
+
+  html.MediaStream? _stream;
+  List<html.MediaDeviceInfo> _videoDevices = const [];
+  String? _selectedDeviceId;
+  bool _isLoading = true;
+  bool _isCapturing = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _viewType = 'external-web-camera-${DateTime.now().microsecondsSinceEpoch}';
+    _videoElement = html.VideoElement()
+      ..autoplay = true
+      ..muted = true
+      ..setAttribute('playsinline', 'true')
+      ..style.width = '100%'
+      ..style.height = '100%'
+      ..style.objectFit = 'cover'
+      ..style.borderRadius = '18px'
+      ..style.backgroundColor = '#020617';
+
+    ui_web.platformViewRegistry.registerViewFactory(
+      _viewType,
+          (int viewId) => _videoElement,
+    );
+
+    _initCamera();
+  }
+
+  @override
+  void dispose() {
+    _stopStream();
+    super.dispose();
+  }
+
+  Future<void> _initCamera() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _startStream(deviceId: _selectedDeviceId);
+      await _loadVideoDevices();
+    } catch (error) {
+      setState(() {
+        _errorMessage = '';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadVideoDevices() async {
+    final devices = await html.window.navigator.mediaDevices!.enumerateDevices();
+
+    final videoDevices = devices
+        .whereType<html.MediaDeviceInfo>()
+        .where((device) => device.kind == 'videoinput')
+        .toList(growable: false);
+
+    if (!mounted) return;
+
+    setState(() {
+      _videoDevices = videoDevices;
+
+      if (_selectedDeviceId == null && videoDevices.isNotEmpty) {
+        _selectedDeviceId = videoDevices.first.deviceId;
+      }
+    });
+  }
+
+  Future<void> _startStream({String? deviceId}) async {
+    _stopStream();
+
+    final constraints = <String, dynamic>{
+      'audio': false,
+      'video': <String, dynamic>{
+        if (deviceId != null && deviceId.isNotEmpty)
+          'deviceId': <String, dynamic>{'exact': deviceId},
+        'width': <String, dynamic>{'ideal': 1280},
+        'height': <String, dynamic>{'ideal': 720},
+      },
+    };
+
+    final stream = await html.window.navigator.mediaDevices!.getUserMedia(constraints);
+
+    _stream = stream;
+    _videoElement.srcObject = stream;
+    await _videoElement.play();
+  }
+
+  void _stopStream() {
+    final stream = _stream;
+    if (stream == null) return;
+
+    for (final track in stream.getTracks()) {
+      track.stop();
+    }
+
+    _stream = null;
+    _videoElement.srcObject = null;
+  }
+
+  Future<void> _changeCamera(String? deviceId) async {
+    if (deviceId == null || deviceId == _selectedDeviceId) return;
+
+    setState(() {
+      _selectedDeviceId = deviceId;
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _startStream(deviceId: deviceId);
+      await _loadVideoDevices();
+    } catch (error) {
+      setState(() {
+        _errorMessage = 'مش قادر أفتح الكاميرا المختارة. جرب كاميرا تانية أو اقفل أي برنامج مستخدم الكاميرا.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  String _deviceLabel(html.MediaDeviceInfo device, int index) {
+    final Object? rawLabel = device.label;
+    final label = rawLabel == null ? '' : rawLabel.toString().trim();
+
+    if (label.isNotEmpty) return label;
+    return 'Camera ${index + 1}';
+  }
+
+  Future<void> _captureImage() async {
+    if (_isCapturing) return;
+
+    setState(() {
+      _isCapturing = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final width = _videoElement.videoWidth;
+      final height = _videoElement.videoHeight;
+
+      if (width <= 0 || height <= 0) {
+        throw Exception('Camera preview is not ready');
+      }
+
+      final canvas = html.CanvasElement(width: width, height: height);
+      canvas.context2D.drawImageScaled(_videoElement, 0, 0, width, height);
+
+      final dataUrl = canvas.toDataUrl('image/jpeg');
+      final commaIndex = dataUrl.indexOf(',');
+      if (commaIndex < 0) {
+        throw Exception('Invalid image data');
+      }
+
+      final bytes = base64Decode(dataUrl.substring(commaIndex + 1));
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop(
+        SurveyAttachmentRequest(
+          fileName: 'survey_camera_$now.jpg',
+          bytes: bytes,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = 'حصل خطأ أثناء التقاط الصورة. جرب تاني.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isCapturing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'External Camera',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _isCapturing
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (_videoDevices.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedDeviceId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'اختار الكاميرا',
+                    prefixIcon: Icon(Icons.videocam_outlined),
+                  ),
+                  items: _videoDevices.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final device = entry.value;
+
+                    return DropdownMenuItem<String>(
+                      value: device.deviceId,
+                      child: Text(
+                        _deviceLabel(device, index),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _isLoading || _isCapturing ? null : _changeCamera,
+                ),
+                const SizedBox(height: 14),
+              ],
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: HtmlElementView(viewType: _viewType),
+                    ),
+                    if (_isLoading)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0x990F172A),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                    if (_errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xEEDC2626),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _isLoading || _isCapturing ? null : _initCamera,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh Cameras'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _isLoading || _isCapturing || _errorMessage != null
+                        ? null
+                        : _captureImage,
+                    icon: _isCapturing
+                        ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Icon(Icons.camera),
+                    label: const Text('Capture'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('',textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w700,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SurveyHeader extends StatelessWidget {
+  final String status;
+  final int ticketId;
+  final int questionsCount;
+  final int yesCount;
+  final int attachmentsCount;
+
+  const _SurveyHeader({
+    required this.status,
+    required this.ticketId,
+    required this.questionsCount,
+    required this.yesCount,
+    required this.attachmentsCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2563EB), Color(0xFF0F766E)],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A0F172A),
+            blurRadius: 30,
+            offset: Offset(0, 18),
+          ),
+        ],
+      ),
+
+    );
+  }
+}
+
+class _HeaderStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _HeaderStat({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 132,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.75),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SurveyDataCard extends StatelessWidget {
+  final int companyId;
+  final int brandId;
+  final int mobileId;
+  final int representativeId;
+  final int areaId;
+  final int ticketId;
+  final String status;
+  final String fixedDateText;
+
+  const _SurveyDataCard({
+    required this.companyId,
+    required this.brandId,
+    required this.mobileId,
+    required this.representativeId,
+    required this.areaId,
+    required this.ticketId,
+    required this.status,
+    required this.fixedDateText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+
+    );
+  }
+}
+
+class _NoteCard extends StatelessWidget {
+  final TextEditingController controller;
+  final bool isLoading;
+
+  const _NoteCard({
+    required this.controller,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle(
+              icon: Icons.note_alt_outlined,
+              title: 'Note',
+              subtitle: 'اكتب أي ملاحظة خاصة بالاستبيان.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              minLines: 4,
+              maxLines: 7,
+              enabled: !isLoading,
+              textDirection: TextDirection.rtl,
+              decoration: const InputDecoration(
+                hintText: 'اكتب الملاحظات هنا',
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentsCard extends StatelessWidget {
+  final List<SurveyAttachmentRequest> attachments;
+  final bool isLoading;
+  final VoidCallback onPickGallery;
+  final VoidCallback onPickCamera;
+  final ValueChanged<SurveyAttachmentRequest> onRemove;
+
+  const _AttachmentsCard({
+    required this.attachments,
+    required this.isLoading,
+    required this.onPickGallery,
+    required this.onPickCamera,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle(
+              icon: Icons.photo_library_outlined,
+              title: 'Survey Images',
+              subtitle: '',
+              trailing: Chip(label: Text('${attachments.length}')),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading ? null : onPickGallery,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('Gallery'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isLoading ? null : onPickCamera,
+                    icon: const Icon(Icons.camera_alt_outlined),
+                    label: const Text('Camera'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (attachments.isEmpty)
+              const _EmptyImagesBox()
+            else
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: attachments.map((attachment) {
+                  return _AttachmentPreview(
+                    attachment: attachment,
+                    isLoading: isLoading,
+                    onRemove: () => onRemove(attachment),
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionsCard extends StatelessWidget {
+  final List<CreateSurveyQuestionInput> questions;
+  final Map<int, bool> answers;
+  final bool isLoading;
+  final void Function(int questionId, bool value) onChanged;
+
+  const _QuestionsCard({
+    required this.questions,
+    required this.answers,
+    required this.isLoading,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionTitle(
+              icon: Icons.quiz_outlined,
+              title: 'Survey Questions',
+              subtitle: 'اختار Yes أو No لكل سؤال.',
+              trailing: Chip(label: Text('${questions.length} questions')),
+            ),
+            const SizedBox(height: 18),
+            if (questions.isEmpty)
+              const _EmptyQuestionsBox()
+            else
+              ...questions.asMap().entries.map((entry) {
+                final index = entry.key + 1;
+                final question = entry.value;
+                final value = answers[question.id] ?? false;
+
+                return _QuestionTile(
+                  index: index,
+                  question: question,
+                  value: value,
+                  isLoading: isLoading,
+                  onChanged: (newValue) => onChanged(question.id, newValue),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionTile extends StatelessWidget {
+  final int index;
+  final CreateSurveyQuestionInput question;
+  final bool value;
+  final bool isLoading;
+  final ValueChanged<bool> onChanged;
+
+  const _QuestionTile({
+    required this.index,
+    required this.question,
+    required this.value,
+    required this.isLoading,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = value ? const Color(0xFF0F766E) : const Color(0xFFDC2626);
+    final activeBg = value ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: value ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x080F172A),
+            blurRadius: 14,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 620;
+          final questionText = Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: activeBg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  index.toString(),
+                  style: TextStyle(
+                    color: activeColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Text(
+                    question.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      height: 1.45,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+
+          final buttons = SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment<bool>(
+                value: true,
+                label: Text('Yes'),
+                icon: Icon(Icons.check_circle_outline),
+              ),
+              ButtonSegment<bool>(
+                value: false,
+                label: Text('No'),
+                icon: Icon(Icons.cancel_outlined),
+              ),
+            ],
+            selected: {value},
+            showSelectedIcon: false,
+            onSelectionChanged: isLoading
+                ? null
+                : (selection) {
+              onChanged(selection.first);
+            },
+          );
+
+          if (!isWide) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                questionText,
+                const SizedBox(height: 14),
+                Align(alignment: AlignmentDirectional.centerEnd, child: buttons),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: questionText),
+              const SizedBox(width: 18),
+              buttons,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+
+  const _SectionTitle({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(icon, color: const Color(0xFF2563EB)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 12),
+          trailing!,
+        ],
+      ],
+    );
+  }
+}
+
+class _DataPill extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DataPill({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        '$label: ${value.isEmpty ? '-' : value}',
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF0F172A),
+        ),
+      ),
+    );
+  }
+}
+
+class _DateBox extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _DateBox({
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.event_outlined, color: Color(0xFF64748B)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentPreview extends StatelessWidget {
+  final SurveyAttachmentRequest attachment;
+  final bool isLoading;
+  final VoidCallback onRemove;
+
+  const _AttachmentPreview({
+    required this.attachment,
+    required this.isLoading,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 154,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                child: Image.memory(
+                  attachment.bytes,
+                  height: 104,
+                  width: 154,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return Container(
+                      height: 104,
+                      width: 154,
+                      color: const Color(0xFFE2E8F0),
+                      child: const Icon(Icons.insert_drive_file_outlined),
+                    );
+                  },
+                ),
+              ),
+              PositionedDirectional(
+                top: 7,
+                end: 7,
+                child: InkWell(
+                  onTap: isLoading ? null : onRemove,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, size: 18),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              attachment.fileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyImagesBox extends StatelessWidget {
+  const _EmptyImagesBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
+          SizedBox(width: 12),
+
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyQuestionsBox extends StatelessWidget {
+  const _EmptyQuestionsBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.error_outline, color: Color(0xFFDC2626)),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'مفيش أسئلة استبيان جاهزة. ارجع وجرب تحميل الأسئلة مرة تانية.',
+              style: TextStyle(
+                color: Color(0xFF991B1B),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubmitBar extends StatelessWidget {
+  final bool isLoading;
+  final int questionsCount;
+  final int yesCount;
+  final int imagesCount;
+  final VoidCallback onSubmit;
+
+  const _SubmitBar({
+    required this.isLoading,
+    required this.questionsCount,
+    required this.yesCount,
+    required this.imagesCount,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final canSubmit = !isLoading && questionsCount > 0 && imagesCount > 0;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1240),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 720;
+                final summary = Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _BottomPill(label: 'Questions', value: questionsCount.toString()),
+                    _BottomPill(label: 'Yes', value: yesCount.toString()),
+                    _BottomPill(label: 'Images', value: imagesCount.toString()),
+                  ],
+                );
+
+                final button = SizedBox(
+                  width: isWide ? 320 : double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: canSubmit ? onSubmit : null,
+                    icon: isLoading
+                        ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Icon(Icons.cloud_upload_outlined),
+                    label: const Text('Submit Survey'),
+                  ),
+                );
+
+                if (!isWide) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [summary, const SizedBox(height: 12), button],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: summary),
+                    const SizedBox(width: 18),
+                    button,
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomPill extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _BottomPill({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        '$label: $value',
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _LoadingDialog extends StatelessWidget {
+  final String message;
+
+  const _LoadingDialog({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 18),
+            Text(
+              message,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
