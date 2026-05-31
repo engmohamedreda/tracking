@@ -170,8 +170,6 @@ class CreateSurveyRequest {
       }
     }
 
-    // لو الصور إجبارية في الباك إند، السطر ده هيظهرها كناقص.
-    if (surveyAttachments.isEmpty) missing.add('SurvayAttachment');
 
     return missing;
   }

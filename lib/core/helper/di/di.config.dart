@@ -38,6 +38,22 @@ import '../../../feature/dtickets/delete_tickets/response/interface/i_delete_tic
     as _i496;
 import '../../../feature/dtickets/delete_tickets/response/remote/delete_tickets_repo.dart'
     as _i241;
+import '../../../feature/dtickets/no_show_tickets/cubit/no_show_ticket_cubit.dart'
+    as _i1104;
+import '../../../feature/dtickets/no_show_tickets/cubit/no_show_ticket_usecase.dart'
+    as _i1105;
+import '../../../feature/dtickets/no_show_tickets/response/interface/i_no_show_ticket_repo.dart'
+    as _i1106;
+import '../../../feature/dtickets/no_show_tickets/response/remote/no_show_ticket_repo.dart'
+    as _i1107;
+import '../../../feature/get_survey_by_id/cubit/get_survey_by_id_cubit.dart'
+    as _i1100;
+import '../../../feature/get_survey_by_id/cubit/get_survey_by_id_usecase.dart'
+    as _i1101;
+import '../../../feature/get_survey_by_id/response/interface/i_get_survey_by_id_repo.dart'
+    as _i1102;
+import '../../../feature/get_survey_by_id/response/remote/get_survey_by_id_repo.dart'
+    as _i1103;
 import '../../../feature/mobile_serials/cubit/get_mobile_serials_cubit.dart'
     as _i1007;
 import '../../../feature/mobile_serials/cubit/get_mobile_serials_usecase.dart'
@@ -85,6 +101,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i316.ICreateSurveyRepo>(
       () => _i841.CreateSurveyRepo(gh<_i69.Apimanager>()),
     );
+    gh.lazySingleton<_i1102.IGetSurveyByIdRepo>(
+      () => _i1103.GetSurveyByIdRepo(gh<_i69.Apimanager>()),
+    );
+    gh.lazySingleton<_i1106.INoShowTicketRepo>(
+      () => _i1107.NoShowTicketRepo(gh<_i69.Apimanager>()),
+    );
     gh.lazySingleton<_i751.IGetNextTicketsRepo>(
       () => _i530.GetNextTicketsRepo(gh<_i69.Apimanager>()),
     );
@@ -107,6 +129,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i584.DeleteTicketsUseCase>(
       () => _i584.DeleteTicketsUseCase(gh<_i496.IDeleteTicketsRepo>()),
     );
+    gh.factory<_i1101.GetSurveyByIdUseCase>(
+      () => _i1101.GetSurveyByIdUseCase(gh<_i1102.IGetSurveyByIdRepo>()),
+    );
+    gh.factory<_i1105.NoShowTicketUseCase>(
+      () => _i1105.NoShowTicketUseCase(gh<_i1106.INoShowTicketRepo>()),
+    );
     gh.factory<_i387.LoginUseCase>(
       () => _i387.LoginUseCase(gh<_i492.ILoginRepo>()),
     );
@@ -124,7 +152,16 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i1035.CreateSurveyUseCase(gh<_i316.ICreateSurveyRepo>()),
     );
     gh.factory<_i599.CreateSurveyCubit>(
-      () => _i599.CreateSurveyCubit(gh<_i1035.CreateSurveyUseCase>()),
+      () => _i599.CreateSurveyCubit(
+        gh<_i1035.CreateSurveyUseCase>(),
+        gh<_i1101.GetSurveyByIdUseCase>(),
+      ),
+    );
+    gh.factory<_i1100.GetSurveyByIdCubit>(
+      () => _i1100.GetSurveyByIdCubit(gh<_i1101.GetSurveyByIdUseCase>()),
+    );
+    gh.factory<_i1104.NoShowTicketCubit>(
+      () => _i1104.NoShowTicketCubit(gh<_i1105.NoShowTicketUseCase>()),
     );
     gh.factory<_i294.LoginCubit>(
       () => _i294.LoginCubit(gh<_i387.LoginUseCase>()),

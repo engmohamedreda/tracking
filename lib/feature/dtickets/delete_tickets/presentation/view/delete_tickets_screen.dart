@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/helper/di/di.dart';
+import '../../../no_show_tickets/cubit/no_show_ticket_cubit.dart';
+import '../../../no_show_tickets/cubit/no_show_ticket_state.dart';
 import '../../cubit/delete_tickets_cubit.dart';
 import '../../cubit/delete_tickets_state.dart';
 
@@ -21,19 +23,41 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
     super.dispose();
   }
 
+  int? _getValidTicketId(BuildContext context) {
+    final ticketId = int.tryParse(ticketIdController.text.trim());
+
+    if (ticketId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter valid ticket id'),
+        ),
+      );
+      return null;
+    }
+
+    return ticketId;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<DeleteTicketsCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => getIt<DeleteTicketsCubit>(),
+        ),
+        BlocProvider(
+          create: (context) => getIt<NoShowTicketCubit>(),
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Delete Ticket'),
+          title: const Text('Ticket Actions'),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16),
-          child: BlocConsumer<DeleteTicketsCubit, DeleteTicketsState>(
+          child: BlocListener<NoShowTicketCubit, NoShowTicketState>(
             listener: (context, state) {
-              if (state is DeleteTicketsSuccess) {
+              if (state is NoShowTicketSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.response.message),
@@ -41,7 +65,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                 );
               }
 
-              if (state is DeleteTicketsError) {
+              if (state is NoShowTicketError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
@@ -49,57 +73,115 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                 );
               }
             },
-            builder: (context, state) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: ticketIdController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Ticket Id',
-                      border: OutlineInputBorder(),
+            child: BlocConsumer<DeleteTicketsCubit, DeleteTicketsState>(
+              listener: (context, state) {
+                if (state is DeleteTicketsSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.response.message),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: state is DeleteTicketsLoading
-                        ? null
-                        : () {
-                            final ticketId = int.tryParse(
-                              ticketIdController.text.trim(),
-                            );
+                  );
+                }
 
-                            if (ticketId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Enter valid ticket id'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            context.read<DeleteTicketsCubit>().deleteTicket(
-                                  ticketId: ticketId,
-                                );
-                          },
-                    child: state is DeleteTicketsLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Delete'),
-                  ),
-                  const SizedBox(height: 16),
-                  if (state is DeleteTicketsSuccess)
-                    Text(
-                      'Deleted: ${state.response.isDeleted}',
-                      textAlign: TextAlign.center,
+                if (state is DeleteTicketsError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
                     ),
-                ],
-              );
-            },
+                  );
+                }
+              },
+              builder: (context, deleteState) {
+                return BlocBuilder<NoShowTicketCubit, NoShowTicketState>(
+                  builder: (context, noShowState) {
+                    final isDeleteLoading = deleteState is DeleteTicketsLoading;
+                    final isNoShowLoading = noShowState is NoShowTicketLoading;
+                    final isBusy = isDeleteLoading || isNoShowLoading;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: ticketIdController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Ticket Id',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: isBusy
+                                    ? null
+                                    : () {
+                                        final ticketId =
+                                            _getValidTicketId(context);
+                                        if (ticketId == null) return;
+
+                                        context
+                                            .read<DeleteTicketsCubit>()
+                                            .deleteTicket(ticketId: ticketId);
+                                      },
+                                icon: isDeleteLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.delete_outline),
+                                label: const Text('Delete'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.tonalIcon(
+                                onPressed: isBusy
+                                    ? null
+                                    : () {
+                                        final ticketId =
+                                            _getValidTicketId(context);
+                                        if (ticketId == null) return;
+
+                                        context
+                                            .read<NoShowTicketCubit>()
+                                            .markNoShow(ticketId: ticketId);
+                                      },
+                                icon: isNoShowLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.person_off_outlined),
+                                label: const Text('No Show'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (deleteState is DeleteTicketsSuccess)
+                          Text(
+                            'Deleted: ${deleteState.response.isDeleted}',
+                            textAlign: TextAlign.center,
+                          ),
+                        if (noShowState is NoShowTicketSuccess)
+                          Text(
+                            'No Show: ${noShowState.response.isSuccess}',
+                            textAlign: TextAlign.center,
+                          ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),

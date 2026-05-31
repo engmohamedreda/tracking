@@ -29,6 +29,7 @@ class CreateSurveyScreen extends StatefulWidget {
   final int representativeId;
   final int areaId;
   final int ticketId;
+  final int surveyId;
   final List<CreateSurveyQuestionInput> questions;
   final String userId;
   final String status;
@@ -43,6 +44,7 @@ class CreateSurveyScreen extends StatefulWidget {
     required this.representativeId,
     required this.areaId,
     required this.ticketId,
+    this.surveyId = 0,
     required this.questions,
     this.userId = '',
     this.status = '',
@@ -118,6 +120,9 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
           },
           builder: (context, state) {
             final isLoading = state is CreateSurveyLoading;
+            final loadingMessage = state is CreateSurveyLoading
+                ? state.message
+                : 'Saving survey...';
 
             return Stack(
               children: [
@@ -218,8 +223,8 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
                   Positioned.fill(
                     child: Container(
                       color: const Color(0x660F172A),
-                      child: const Center(
-                        child: _LoadingDialog(message: 'Saving survey...'),
+                      child: Center(
+                        child: _LoadingDialog(message: loadingMessage),
                       ),
                     ),
                   ),
@@ -278,11 +283,6 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
       return;
     }
 
-    if (selectedAttachments.isEmpty) {
-      _showMessage('اختار صورة واحدة على الأقل قبل الحفظ');
-      return;
-    }
-
     final surveyAnswers = widget.questions.map((question) {
       return SurveyAnswerRequest(
         id: 0,
@@ -292,7 +292,7 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
       );
     }).toList();
 
-    context.read<CreateSurveyCubit>().createSurveyFromFlow(
+    context.read<CreateSurveyCubit>().createSurveyFromFlowAndWaitForFingerprint(
       companyId: widget.companyId,
       brandId: widget.brandId,
       mobileId: widget.mobileId,
@@ -1338,8 +1338,7 @@ class _SubmitBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = !isLoading && questionsCount > 0 && imagesCount > 0;
-
+    final canSubmit = !isLoading && questionsCount > 0;
     return SafeArea(
       top: false,
       child: Container(

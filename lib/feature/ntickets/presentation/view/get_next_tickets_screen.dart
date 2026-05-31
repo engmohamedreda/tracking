@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/helper/di/di.dart';
 import '../../../dtickets/delete_tickets/cubit/delete_tickets_cubit.dart';
 import '../../../dtickets/delete_tickets/cubit/delete_tickets_state.dart';
+import '../../../dtickets/no_show_tickets/cubit/no_show_ticket_cubit.dart';
+import '../../../dtickets/no_show_tickets/cubit/no_show_ticket_state.dart';
 import '../../../ticket_survey_flow/presentation/view/ticket_survey_setup_screen.dart';
 import '../../cubit/get_next_tickets_cubit.dart';
 import '../../cubit/get_next_tickets_state.dart';
@@ -22,6 +24,9 @@ class GetNextTicketsScreen extends StatelessWidget {
         BlocProvider(
           create: (_) => getIt<DeleteTicketsCubit>(),
         ),
+        BlocProvider(
+          create: (_) => getIt<NoShowTicketCubit>(),
+        ),
       ],
       child: const _GetNextTicketsView(),
     );
@@ -33,24 +38,47 @@ class _GetNextTicketsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<DeleteTicketsCubit, DeleteTicketsState>(
-      listener: (context, state) {
-        if (state is DeleteTicketsSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.response.message)),
-          );
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<DeleteTicketsCubit, DeleteTicketsState>(
+          listener: (context, state) {
+            if (state is DeleteTicketsSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.response.message)),
+              );
 
-          if (state.response.isDeleted) {
-            context.read<GetNextTicketsCubit>().load();
-          }
-        }
+              if (state.response.isDeleted) {
+                context.read<GetNextTicketsCubit>().load();
+              }
+            }
 
-        if (state is DeleteTicketsError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        }
-      },
+            if (state is DeleteTicketsError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+        ),
+        BlocListener<NoShowTicketCubit, NoShowTicketState>(
+          listener: (context, state) {
+            if (state is NoShowTicketSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.response.message)),
+              );
+
+              if (state.response.isSuccess) {
+                context.read<GetNextTicketsCubit>().load();
+              }
+            }
+
+            if (state is NoShowTicketError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Next Ticket'),
@@ -95,63 +123,93 @@ class _GetNextTicketsView extends StatelessWidget {
                       top: false,
                       child: BlocBuilder<DeleteTicketsCubit, DeleteTicketsState>(
                         builder: (context, deleteState) {
-                          final isDeleteLoading =
-                              deleteState is DeleteTicketsLoading;
-                          final isBusy = isNextLoading || isDeleteLoading;
+                          return BlocBuilder<NoShowTicketCubit, NoShowTicketState>(
+                            builder: (context, noShowState) {
+                              final isDeleteLoading =
+                                  deleteState is DeleteTicketsLoading;
+                              final isNoShowLoading =
+                                  noShowState is NoShowTicketLoading;
+                              final isBusy =
+                                  isNextLoading || isDeleteLoading || isNoShowLoading;
 
-                          return Container(
-                            padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              border: Border(
-                                top: BorderSide(color: Color(0xFFE2E8F0)),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                ConstrainedBox(
-                                  constraints:
-                                      const BoxConstraints(maxWidth: 230),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: isBusy || ticket == null
-                                          ? null
-                                          : () => _confirmDelete(context, ticket),
-                                      icon: isDeleteLoading
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Icon(Icons.delete_outline),
-                                      label: const Text('Delete'),
-                                    ),
+                              return Container(
+                                padding: const EdgeInsets.fromLTRB(24, 14, 24, 18),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border(
+                                    top: BorderSide(color: Color(0xFFE2E8F0)),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                ConstrainedBox(
-                                  constraints:
-                                      const BoxConstraints(maxWidth: 260),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      onPressed: isBusy || ticket == null
-                                          ? null
-                                          : () => _openTicketSetup(
-                                                context,
-                                                ticket,
-                                              ),
-                                      icon: const Icon(Icons.arrow_forward),
-                                      label: const Text('Next'),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 220),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: OutlinedButton.icon(
+                                          onPressed: isBusy || ticket == null
+                                              ? null
+                                              : () => _confirmDelete(context, ticket),
+                                          icon: isDeleteLoading
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.delete_outline),
+                                          label: const Text('Delete'),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(width: 12),
+                                    ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 220),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: FilledButton.tonalIcon(
+                                          onPressed: isBusy || ticket == null
+                                              ? null
+                                              : () => _confirmNoShow(context, ticket),
+                                          icon: isNoShowLoading
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.person_off_outlined),
+                                          label: const Text('No Show'),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 250),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: isBusy || ticket == null
+                                              ? null
+                                              : () => _openTicketSetup(
+                                                    context,
+                                                    ticket,
+                                                  ),
+                                          icon: const Icon(Icons.arrow_forward),
+                                          label: const Text('Next'),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -192,6 +250,35 @@ class _GetNextTicketsView extends StatelessWidget {
 
     if (confirmed == true) {
       deleteCubit.deleteTicket(ticketId: ticket.id);
+    }
+  }
+
+  Future<void> _confirmNoShow(BuildContext context, TicketEntity ticket) async {
+    final noShowCubit = context.read<NoShowTicketCubit>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Mark as no show?'),
+          content: Text('Are you sure you want to mark ticket #${ticket.ticketsNumber} as no show?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.person_off_outlined),
+              label: const Text('No Show'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      noShowCubit.markNoShow(ticketId: ticket.id);
     }
   }
 
