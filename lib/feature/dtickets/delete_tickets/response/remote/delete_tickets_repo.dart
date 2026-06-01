@@ -23,7 +23,7 @@ class DeleteTicketsRepo implements IDeleteTicketsRepo {
 
     if (connectivityResult == ConnectivityResult.none) {
       return left(
-        NEtworkerror(errorMsg: 'No internet connection'),
+        NEtworkerror(errorMsg: 'لا يوجد اتصال بالإنترنت'),
       );
     }
 
@@ -66,6 +66,6 @@ class DeleteTicketsRepo implements IDeleteTicketsRepo {
       return data['message'].toString();
     }
 
-    return response.statusMessage ?? 'Something went wrong';
+    return response.statusMessage ?? 'حدث خطأ غير متوقع';
   }
 }

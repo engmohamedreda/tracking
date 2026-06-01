@@ -29,7 +29,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
     if (ticketId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter valid ticket id'),
+          content: Text('أدخل رقم تذكرة صحيح'),
         ),
       );
       return null;
@@ -51,7 +51,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
       ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Ticket Actions'),
+          title: const Text('إجراءات التذكرة'),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16),
@@ -105,7 +105,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                           controller: ticketIdController,
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            labelText: 'Ticket Id',
+                            labelText: 'رقم التذكرة',
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -134,7 +134,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.delete_outline),
-                                label: const Text('Delete'),
+                                label: const Text('حذف'),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -160,7 +160,7 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                                         ),
                                       )
                                     : const Icon(Icons.person_off_outlined),
-                                label: const Text('No Show'),
+                                label: const Text('لم يحضر'),
                               ),
                             ),
                           ],
@@ -168,12 +168,12 @@ class _DeleteTicketsScreenState extends State<DeleteTicketsScreen> {
                         const SizedBox(height: 16),
                         if (deleteState is DeleteTicketsSuccess)
                           Text(
-                            'Deleted: ${deleteState.response.isDeleted}',
+                            'تم الحذف: ${deleteState.response.isDeleted}',
                             textAlign: TextAlign.center,
                           ),
                         if (noShowState is NoShowTicketSuccess)
                           Text(
-                            'No Show: ${noShowState.response.isSuccess}',
+                            'تم تسجيل عدم الحضور: ${noShowState.response.isSuccess}',
                             textAlign: TextAlign.center,
                           ),
                       ],

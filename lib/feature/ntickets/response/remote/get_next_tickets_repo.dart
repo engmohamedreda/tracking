@@ -21,7 +21,7 @@ class GetNextTicketsRepo implements IGetNextTicketsRepo {
 
     if (connectivityResult == ConnectivityResult.none) {
       return left(
-        NEtworkerror(errorMsg: 'No internet connection'),
+        NEtworkerror(errorMsg: 'لا يوجد اتصال بالإنترنت'),
       );
     }
 
@@ -65,6 +65,6 @@ class GetNextTicketsRepo implements IGetNextTicketsRepo {
       return data['error'].toString();
     }
 
-    return response.statusMessage ?? 'Something went wrong';
+    return response.statusMessage ?? 'حدث خطأ غير متوقع';
   }
 }

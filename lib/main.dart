@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Tickets App',
+      title: 'تطبيق التذاكر',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Arial',
@@ -116,6 +116,12 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const LoginScreen(),
     );
   }

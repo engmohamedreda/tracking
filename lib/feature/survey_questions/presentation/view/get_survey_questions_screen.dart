@@ -15,7 +15,7 @@ class GetSurveyQuestionsScreen extends StatelessWidget {
       create: (_) => getIt<GetSurveyQuestionsCubit>()..load(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Survey Questions'),
+          title: const Text('أسئلة الاستبيان'),
         ),
         body: BlocBuilder<GetSurveyQuestionsCubit, GetSurveyQuestionsState>(
           builder: (context, state) {
@@ -38,7 +38,7 @@ class GetSurveyQuestionsScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () =>
                             context.read<GetSurveyQuestionsCubit>().load(),
-                        child: const Text('Retry'),
+                        child: const Text('إعادة المحاولة'),
                       ),
                     ],
                   ),
@@ -51,7 +51,7 @@ class GetSurveyQuestionsScreen extends StatelessWidget {
 
               if (questions.isEmpty) {
                 return const Center(
-                  child: Text('No survey questions found'),
+                  child: Text('لا توجد أسئلة استبيان'),
                 );
               }
 
@@ -125,7 +125,7 @@ class _SurveyQuestionCardState extends State<_SurveyQuestionCard> {
                         answer = true;
                       });
                     },
-                    child: Text(answer == true ? 'Yes ✓' : 'Yes'),
+                    child: Text(answer == true ? 'نعم ✓' : 'نعم'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -136,7 +136,7 @@ class _SurveyQuestionCardState extends State<_SurveyQuestionCard> {
                         answer = false;
                       });
                     },
-                    child: Text(answer == false ? 'No ✓' : 'No'),
+                    child: Text(answer == false ? 'لا ✓' : 'لا'),
                   ),
                 ),
               ],

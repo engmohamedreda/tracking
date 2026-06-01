@@ -11,7 +11,7 @@ class NoShowTicketResponse {
     if (json == null) {
       return NoShowTicketResponse(
         isSuccess: true,
-        message: 'Ticket marked as no-show successfully',
+        message: 'تم تسجيل العميل كغير حاضر بنجاح',
       );
     }
 
@@ -19,15 +19,15 @@ class NoShowTicketResponse {
       return NoShowTicketResponse(
         isSuccess: json,
         message: json
-            ? 'Ticket marked as no-show successfully'
-            : 'Ticket was not marked as no-show',
+            ? 'تم تسجيل العميل كغير حاضر بنجاح'
+            : 'لم يتم تسجيل العميل كغير حاضر',
       );
     }
 
     if (json is String) {
       return NoShowTicketResponse(
         isSuccess: true,
-        message: json.isEmpty ? 'Ticket marked as no-show successfully' : json,
+        message: json.isEmpty ? 'تم تسجيل العميل كغير حاضر بنجاح' : json,
       );
     }
 
@@ -45,8 +45,8 @@ class NoShowTicketResponse {
       message: _asString(
         map['message'],
         defaultValue: isSuccess
-            ? 'Ticket marked as no-show successfully'
-            : 'Ticket was not marked as no-show',
+            ? 'تم تسجيل العميل كغير حاضر بنجاح'
+            : 'لم يتم تسجيل العميل كغير حاضر',
       ),
     );
   }

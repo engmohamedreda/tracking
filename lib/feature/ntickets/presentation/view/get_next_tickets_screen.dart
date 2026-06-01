@@ -81,7 +81,7 @@ class _GetNextTicketsView extends StatelessWidget {
       ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Next Ticket'),
+          title: const Text('العميل التالي'),
           actions: [
             BlocBuilder<GetNextTicketsCubit, GetNextTicketsState>(
               builder: (context, state) {
@@ -89,7 +89,7 @@ class _GetNextTicketsView extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsetsDirectional.only(end: 16),
                   child: IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: 'تحديث',
                     onPressed: isLoading
                         ? null
                         : () => context.read<GetNextTicketsCubit>().refresh(),
@@ -161,7 +161,7 @@ class _GetNextTicketsView extends StatelessWidget {
                                                   ),
                                                 )
                                               : const Icon(Icons.delete_outline),
-                                          label: const Text('Delete'),
+                                          label: const Text('حذف'),
                                         ),
                                       ),
                                     ),
@@ -184,7 +184,7 @@ class _GetNextTicketsView extends StatelessWidget {
                                                   ),
                                                 )
                                               : const Icon(Icons.person_off_outlined),
-                                          label: const Text('No Show'),
+                                          label: const Text('لم يحضر'),
                                         ),
                                       ),
                                     ),
@@ -202,7 +202,7 @@ class _GetNextTicketsView extends StatelessWidget {
                                                     ticket,
                                                   ),
                                           icon: const Icon(Icons.arrow_forward),
-                                          label: const Text('Next'),
+                                          label: const Text('التالي'),
                                         ),
                                       ),
                                     ),
@@ -231,17 +231,17 @@ class _GetNextTicketsView extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete ticket?'),
-          content: Text('Are you sure you want to delete ticket #${ticket.ticketsNumber}?'),
+          title: const Text('حذف التذكرة؟'),
+          content: Text('هل أنت متأكد من حذف التذكرة رقم ${ticket.ticketsNumber}؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: const Text('إلغاء'),
             ),
             FilledButton.tonalIcon(
               onPressed: () => Navigator.pop(dialogContext, true),
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Delete'),
+              label: const Text('حذف'),
             ),
           ],
         );
@@ -260,17 +260,17 @@ class _GetNextTicketsView extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Mark as no show?'),
-          content: Text('Are you sure you want to mark ticket #${ticket.ticketsNumber} as no show?'),
+          title: const Text('تسجيل العميل كغير حاضر؟'),
+          content: Text('هل أنت متأكد من تسجيل التذكرة رقم ${ticket.ticketsNumber} كغير حاضر؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: const Text('إلغاء'),
             ),
             FilledButton.tonalIcon(
               onPressed: () => Navigator.pop(dialogContext, true),
               icon: const Icon(Icons.person_off_outlined),
-              label: const Text('No Show'),
+              label: const Text('لم يحضر'),
             ),
           ],
         );
@@ -313,7 +313,7 @@ class _Body extends StatelessWidget {
     final currentTicket = ticket;
 
     if (currentState is GetNextTicketsLoading) {
-      return const _PageLoader(message: 'Loading next ticket...');
+      return const _PageLoader(message: 'جاري تحميل العميل التالي...');
     }
 
     if (currentState is GetNextTicketsError) {
@@ -374,6 +374,13 @@ class _TopBanner extends StatelessWidget {
 
   const _TopBanner({required this.ticket});
 
+  String _statusLabel(String value) {
+    final lower = value.toLowerCase();
+    if (lower == 'waiting') return 'انتظار';
+    if (lower == 'iscalled') return 'تم النداء';
+    return value.isEmpty ? '-' : value;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -405,7 +412,7 @@ class _TopBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ticket #${ticket.ticketsNumber}',
+                  'تذكرة رقم ${ticket.ticketsNumber}',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -434,6 +441,13 @@ class _WhiteStatusChip extends StatelessWidget {
 
   const _WhiteStatusChip({required this.status});
 
+  String _statusLabel(String value) {
+    final lower = value.toLowerCase();
+    if (lower == 'waiting') return 'انتظار';
+    if (lower == 'iscalled') return 'تم النداء';
+    return value.isEmpty ? '-' : value;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -444,7 +458,7 @@ class _WhiteStatusChip extends StatelessWidget {
         border: Border.all(color: Colors.white.withOpacity(0.22)),
       ),
       child: Text(
-        status,
+        _statusLabel(status),
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w900,
@@ -468,7 +482,7 @@ class _MainTicketCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ticket Details',
+              'بيانات التذكرة',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
@@ -480,32 +494,32 @@ class _MainTicketCard extends StatelessWidget {
               children: [
                 _InfoBox(
                   icon: Icons.confirmation_number_outlined,
-                  label: 'Ticket ID',
+                  label: 'رقم التذكرة',
                   value: ticket.id.toString(),
                 ),
                 _InfoBox(
                   icon: Icons.person_outline,
-                  label: 'Representative',
+                  label: 'المندوب',
                   value: ticket.representativeName,
                 ),
                 _InfoBox(
                   icon: Icons.apartment_outlined,
-                  label: 'Company',
+                  label: 'الشركة',
                   value: ticket.companyName,
                 ),
                 _InfoBox(
                   icon: Icons.store_mall_directory_outlined,
-                  label: 'Branch',
+                  label: 'الفرع',
                   value: ticket.branchName,
                 ),
                 _InfoBox(
                   icon: Icons.fingerprint,
-                  label: 'Fingerprint',
+                  label: 'البصمة',
                   value: ticket.representativeFingerPrint,
                 ),
                 _InfoBox(
                   icon: Icons.badge_outlined,
-                  label: 'Representative ID',
+                  label: 'رقم المندوب',
                   value: ticket.representativeId.toString(),
                 ),
               ],
@@ -585,7 +599,7 @@ class _TimelineCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ticket Time',
+              'توقيت التذكرة',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
@@ -593,22 +607,22 @@ class _TimelineCard extends StatelessWidget {
             const SizedBox(height: 18),
             _TimelineItem(
               icon: Icons.login,
-              label: 'Check In',
+              label: 'وقت الدخول',
               value: ticket.checkInTime,
               active: true,
             ),
             _TimelineItem(
               icon: Icons.call_received,
-              label: 'Called',
-              value: ticket.hasCalledTime ? ticket.checkCalledTime : 'Not called yet',
+              label: 'تم النداء',
+              value: ticket.hasCalledTime ? ticket.checkCalledTime : 'لم يتم النداء بعد',
               active: ticket.hasCalledTime,
             ),
             _TimelineItem(
               icon: Icons.done_all,
-              label: 'Completed',
+              label: 'تم الانتهاء',
               value: ticket.hasCompletedTime
                   ? ticket.checkCompletedTime
-                  : 'Not completed yet',
+                  : 'لم يتم الانتهاء بعد',
               active: ticket.hasCompletedTime,
               isLast: true,
             ),
@@ -715,7 +729,7 @@ class _EmptyNextTicket extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('No next ticket found'));
+    return const Center(child: Text('لا توجد تذكرة تالية'));
   }
 }
 
@@ -751,7 +765,7 @@ class _ErrorView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: const Text('إعادة المحاولة'),
               ),
             ],
           ),

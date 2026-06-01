@@ -9,7 +9,7 @@ class CreateSurveyInitial extends CreateSurveyState {}
 class CreateSurveyLoading extends CreateSurveyState {
   final String message;
 
-  CreateSurveyLoading({this.message = 'Saving survey...'});
+  CreateSurveyLoading({this.message = 'جاري حفظ الاستبيان...'});
 }
 
 class CreateSurveyWaitingFingerprint extends CreateSurveyLoading {
@@ -25,7 +25,7 @@ class CreateSurveyWaitingFingerprint extends CreateSurveyLoading {
     this.nextRefreshSeconds = 5,
   }) : super(
           message:
-              'Fingerprint is not confirmed yet. Refreshing again in $nextRefreshSeconds seconds...',
+              'لم يتم تأكيد البصمة بعد. سيتم التحديث مرة أخرى بعد $nextRefreshSeconds ثواني...',
         );
 }
 

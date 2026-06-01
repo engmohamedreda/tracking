@@ -90,14 +90,14 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FB),
         appBar: AppBar(
-          title: const Text('Survey'),
+          title: const Text('الاستبيان'),
           actions: [
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 18),
               child: Center(
                 child: Chip(
                   avatar: const Icon(Icons.confirmation_number_outlined, size: 18),
-                  label: Text('Ticket ${widget.ticketId}'),
+                  label: Text('تذكرة ${widget.ticketId}'),
                 ),
               ),
             ),
@@ -122,7 +122,7 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
             final isLoading = state is CreateSurveyLoading;
             final loadingMessage = state is CreateSurveyLoading
                 ? state.message
-                : 'Saving survey...';
+                : 'جاري حفظ الاستبيان...';
 
             return Stack(
               children: [
@@ -461,7 +461,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
     final label = rawLabel == null ? '' : rawLabel.toString().trim();
 
     if (label.isNotEmpty) return label;
-    return 'Camera ${index + 1}';
+    return 'كاميرا ${index + 1}';
   }
 
   Future<void> _captureImage() async {
@@ -477,7 +477,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
       final height = _videoElement.videoHeight;
 
       if (width <= 0 || height <= 0) {
-        throw Exception('Camera preview is not ready');
+        throw Exception('معاينة الكاميرا غير جاهزة');
       }
 
       final canvas = html.CanvasElement(width: width, height: height);
@@ -486,7 +486,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
       final dataUrl = canvas.toDataUrl('image/jpeg');
       final commaIndex = dataUrl.indexOf(',');
       if (commaIndex < 0) {
-        throw Exception('Invalid image data');
+        throw Exception('بيانات الصورة غير صحيحة');
       }
 
       final bytes = base64Decode(dataUrl.substring(commaIndex + 1));
@@ -531,7 +531,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'External Camera',
+                      'الكاميرا الخارجية',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
@@ -619,7 +619,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
                   OutlinedButton.icon(
                     onPressed: _isLoading || _isCapturing ? null : _initCamera,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh Cameras'),
+                    label: const Text('تحديث الكاميرات'),
                   ),
                   ElevatedButton.icon(
                     onPressed: _isLoading || _isCapturing || _errorMessage != null
@@ -632,7 +632,7 @@ class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                         : const Icon(Icons.camera),
-                    label: const Text('Capture'),
+                    label: const Text('التقاط صورة'),
                   ),
                 ],
               ),
@@ -785,7 +785,7 @@ class _NoteCard extends StatelessWidget {
           children: [
             _SectionTitle(
               icon: Icons.note_alt_outlined,
-              title: 'Note',
+              title: 'ملاحظات',
               subtitle: 'اكتب أي ملاحظة خاصة بالاستبيان.',
             ),
             const SizedBox(height: 16),
@@ -832,8 +832,8 @@ class _AttachmentsCard extends StatelessWidget {
           children: [
             _SectionTitle(
               icon: Icons.photo_library_outlined,
-              title: 'Survey Images',
-              subtitle: '',
+              title: 'صور الاستبيان',
+              subtitle: 'اختياري - يمكنك حفظ الاستبيان بدون صور',
               trailing: Chip(label: Text('${attachments.length}')),
             ),
             const SizedBox(height: 16),
@@ -843,7 +843,7 @@ class _AttachmentsCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: isLoading ? null : onPickGallery,
                     icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Gallery'),
+                    label: const Text('المعرض'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -851,7 +851,7 @@ class _AttachmentsCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: isLoading ? null : onPickCamera,
                     icon: const Icon(Icons.camera_alt_outlined),
-                    label: const Text('Camera'),
+                    label: const Text('الكاميرا'),
                   ),
                 ),
               ],
@@ -901,9 +901,9 @@ class _QuestionsCard extends StatelessWidget {
           children: [
             _SectionTitle(
               icon: Icons.quiz_outlined,
-              title: 'Survey Questions',
-              subtitle: 'اختار Yes أو No لكل سؤال.',
-              trailing: Chip(label: Text('${questions.length} questions')),
+              title: 'أسئلة الاستبيان',
+              subtitle: 'اختار نعم أو لا لكل سؤال.',
+              trailing: Chip(label: Text('${questions.length} سؤال')),
             ),
             const SizedBox(height: 18),
             if (questions.isEmpty)
@@ -1010,12 +1010,12 @@ class _QuestionTile extends StatelessWidget {
             segments: const [
               ButtonSegment<bool>(
                 value: true,
-                label: Text('Yes'),
+                label: Text('نعم'),
                 icon: Icon(Icons.check_circle_outline),
               ),
               ButtonSegment<bool>(
                 value: false,
-                label: Text('No'),
+                label: Text('لا'),
                 icon: Icon(Icons.cancel_outlined),
               ),
             ],
@@ -1357,9 +1357,9 @@ class _SubmitBar extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    _BottomPill(label: 'Questions', value: questionsCount.toString()),
-                    _BottomPill(label: 'Yes', value: yesCount.toString()),
-                    _BottomPill(label: 'Images', value: imagesCount.toString()),
+                    _BottomPill(label: 'الأسئلة', value: questionsCount.toString()),
+                    _BottomPill(label: 'نعم', value: yesCount.toString()),
+                    _BottomPill(label: 'الصور', value: imagesCount.toString()),
                   ],
                 );
 
@@ -1374,7 +1374,7 @@ class _SubmitBar extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                         : const Icon(Icons.cloud_upload_outlined),
-                    label: const Text('Submit Survey'),
+                    label: const Text('حفظ الاستبيان'),
                   ),
                 );
 

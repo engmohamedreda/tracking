@@ -17,7 +17,7 @@ class GetAllTicketsScreen extends StatelessWidget {
       create: (_) => getIt<GetAllTicketsCubit>()..load(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Tickets Dashboard'),
+          title: const Text('لوحة التذاكر'),
           actions: [
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 10),
@@ -40,7 +40,7 @@ class GetAllTicketsScreen extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsetsDirectional.only(end: 16),
                   child: IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: 'تحديث',
                     onPressed: isLoading
                         ? null
                         : () => context.read<GetAllTicketsCubit>().refresh(),
@@ -54,7 +54,7 @@ class GetAllTicketsScreen extends StatelessWidget {
         body: BlocBuilder<GetAllTicketsCubit, GetAllTicketsState>(
           builder: (context, state) {
             if (state is GetAllTicketsLoading) {
-              return const _PageLoader(message: 'Loading tickets...');
+              return const _PageLoader(message: 'جاري تحميل التذاكر...');
             }
 
             if (state is GetAllTicketsError) {
@@ -80,9 +80,9 @@ class GetAllTicketsScreen extends StatelessWidget {
                                     context.read<GetAllTicketsCubit>().refresh(),
                                 child: LayoutBuilder(
                                   builder: (context, constraints) {
-                                    final isWide = constraints.maxWidth >= 900;
+                                    final isWide = constraints.maxWidth >= 700;
                                     final cardWidth = isWide
-                                        ? (constraints.maxWidth - 64) / 3
+                                        ? (constraints.maxWidth - 64) / 2
                                         : constraints.maxWidth;
 
                                     return ListView(
@@ -167,7 +167,7 @@ class _HeaderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'All Tickets',
+                'كل التذاكر',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -175,7 +175,7 @@ class _HeaderCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Monitor waiting tickets and open the next ticket flow.',
+                'تابع العملاء المنتظرين وافتح العميل التالي.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withOpacity(0.82),
                     ),
@@ -186,9 +186,9 @@ class _HeaderCard extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _StatPill(label: 'Total', value: tickets.length.toString()),
-              _StatPill(label: 'Waiting', value: waitingCount.toString()),
-              _StatPill(label: 'Called', value: calledCount.toString()),
+              _StatPill(label: 'الإجمالي', value: tickets.length.toString()),
+              _StatPill(label: 'انتظار', value: waitingCount.toString()),
+              _StatPill(label: 'تم النداء', value: calledCount.toString()),
             ],
           );
 
@@ -287,14 +287,14 @@ class _TicketCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ticket #${ticket.ticketsNumber}',
+                        'تذكرة رقم ${ticket.ticketsNumber}',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w900,
                             ),
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'ID: ${ticket.id}',
+                        'الرقم: ${ticket.id}',
                         style: const TextStyle(color: Color(0xFF64748B)),
                       ),
                     ],
@@ -306,22 +306,22 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 16),
             _InfoTile(
               icon: Icons.person_outline,
-              label: 'Representative',
+              label: 'المندوب',
               value: ticket.representativeName,
             ),
             _InfoTile(
               icon: Icons.apartment_outlined,
-              label: 'Company',
+              label: 'الشركة',
               value: ticket.companyName,
             ),
             _InfoTile(
               icon: Icons.store_mall_directory_outlined,
-              label: 'Branch',
+              label: 'الفرع',
               value: ticket.branchName,
             ),
             _InfoTile(
               icon: Icons.fingerprint,
-              label: 'Fingerprint',
+              label: 'البصمة',
               value: ticket.representativeFingerPrint,
             ),
           ],
@@ -382,6 +382,13 @@ class _StatusChip extends StatelessWidget {
 
   const _StatusChip({required this.status});
 
+  String _statusLabel(String value) {
+    final lower = value.toLowerCase();
+    if (lower == 'waiting') return 'انتظار';
+    if (lower == 'iscalled') return 'تم النداء';
+    return value.isEmpty ? '-' : value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final lower = status.toLowerCase();
@@ -398,7 +405,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        status,
+        _statusLabel(status),
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w900,
@@ -481,7 +488,7 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('No tickets found'),
+      child: Text('لا توجد تذاكر'),
     );
   }
 }
@@ -518,7 +525,7 @@ class _ErrorView extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: const Text('إعادة المحاولة'),
               ),
             ],
           ),

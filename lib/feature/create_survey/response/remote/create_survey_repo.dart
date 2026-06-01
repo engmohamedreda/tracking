@@ -27,7 +27,7 @@ class CreateSurveyRepo implements ICreateSurveyRepo {
 
     if (_isNoInternet(connectivityResult)) {
       return left(
-        NEtworkerror(errorMsg: 'No internet connection'),
+        NEtworkerror(errorMsg: 'لا يوجد اتصال بالإنترنت'),
       );
     }
 
@@ -155,6 +155,6 @@ class CreateSurveyRepo implements ICreateSurveyRepo {
       return data.toString();
     }
 
-    return response.statusMessage ?? 'Something went wrong';
+    return response.statusMessage ?? 'حدث خطأ غير متوقع';
   }
 }

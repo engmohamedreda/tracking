@@ -11,7 +11,7 @@ class DeleteTicketsResponse {
     if (json is bool) {
       return DeleteTicketsResponse(
         isDeleted: json,
-        message: json ? 'Ticket deleted successfully' : 'Ticket not deleted',
+        message: json ? 'تم حذف التذكرة بنجاح' : 'لم يتم حذف التذكرة',
       );
     }
 
@@ -23,7 +23,7 @@ class DeleteTicketsResponse {
       isDeleted: isDeleted,
       message: _asString(
         map['message'],
-        defaultValue: isDeleted ? 'Ticket deleted successfully' : 'Ticket not deleted',
+        defaultValue: isDeleted ? 'تم حذف التذكرة بنجاح' : 'لم يتم حذف التذكرة',
       ),
     );
   }

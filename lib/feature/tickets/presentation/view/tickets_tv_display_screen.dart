@@ -318,7 +318,7 @@ class _LiveBoardHeader extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'LIVE QUEUE BOARD',
+                    'شاشة انتظار العملاء',
                     style: TextStyle(
                       color: Color(0xFFFACC15),
                       fontSize: 17,
@@ -337,13 +337,13 @@ class _LiveBoardHeader extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _InfoBox(label: 'TOTAL', value: '$total'),
-              _InfoBox(label: 'WAITING', value: '$waiting'),
-              _InfoBox(label: 'CALLED', value: '$called'),
-              _InfoBox(label: 'REFRESH', value: '${secondsLeft}s'),
-              _InfoBox(label: 'TIME', value: _formatTime(lastUpdated)),
+              _InfoBox(label: 'الإجمالي', value: '$total'),
+              _InfoBox(label: 'انتظار', value: '$waiting'),
+              _InfoBox(label: 'تم النداء', value: '$called'),
+              _InfoBox(label: 'التحديث', value: '${secondsLeft}s'),
+              _InfoBox(label: 'الوقت', value: _formatTime(lastUpdated)),
               IconButton.filled(
-                tooltip: 'Refresh now',
+                tooltip: 'تحديث الآن',
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0xFFFACC15),
                   foregroundColor: const Color(0xFF111827),
@@ -353,7 +353,7 @@ class _LiveBoardHeader extends StatelessWidget {
                 icon: const Icon(Icons.refresh),
               ),
               IconButton.filled(
-                tooltip: 'Back',
+                tooltip: 'رجوع',
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0xFF1F2937),
                   foregroundColor: Colors.white,
@@ -466,7 +466,7 @@ class _MainCustomerPanel extends StatelessWidget {
               children: [
                 _SectionTitle(
                   title: isCalled ? 'العميل التالي' : 'أول عميل في الانتظار',
-                  subtitle: isCalled ? 'NOW SERVING' : 'NEXT WAITING',
+                  subtitle: isCalled ? 'العميل الحالي' : 'أول عميل في الانتظار',
                   icon: isCalled
                       ? Icons.campaign_outlined
                       : Icons.hourglass_top_rounded,
@@ -543,9 +543,9 @@ class _MainCustomerInfo extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _MiniTag(label: 'CODE', value: ticket.representativeFingerPrint),
-              _MiniTag(label: 'COMPANY', value: ticket.companyName),
-              _MiniTag(label: 'BRANCH', value: ticket.branchName),
+              _MiniTag(label: 'الكود', value: ticket.representativeFingerPrint),
+              _MiniTag(label: 'الشركة', value: ticket.companyName),
+              _MiniTag(label: 'الفرع', value: ticket.branchName),
             ],
           ),
         ],
@@ -574,11 +574,11 @@ class _CustomersAfterPanel extends StatelessWidget {
         children: [
           const _SectionTitle(
             title: 'العملاء اللي بعده',
-            subtitle: 'UPCOMING CUSTOMERS',
+            subtitle: '',
             icon: Icons.format_list_numbered_rtl_outlined,
             color: Color(0xFF38BDF8),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 7),
           Expanded(
             child: tickets.isEmpty
                 ? const _NoUpcomingCustomers()
@@ -598,7 +598,6 @@ class _CustomersAfterPanel extends StatelessWidget {
     );
   }
 }
-
 class _UpcomingCustomerCard extends StatelessWidget {
   final TicketEntity ticket;
 
@@ -606,54 +605,53 @@ class _UpcomingCustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF030712),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '${ticket.ticketsNumber}',
-              style: const TextStyle(
-                color: Color(0xFF7DD3FC),
-                fontSize: 58,
-                height: 1,
-                fontWeight: FontWeight.w900,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 105;
+
+        return Container(
+          padding: EdgeInsets.all(compact ? 8 : 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF030712),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: 130,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${ticket.ticketsNumber}',
+                      style: TextStyle(
+                        color: const Color(0xFF7DD3FC),
+                        fontSize:  30,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: compact ? 6 : 10),
+                    Text(
+                      _safe(ticket.representativeName),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize:  18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            _safe(ticket.representativeName),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            _safe(ticket.representativeFingerPrint),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -696,7 +694,7 @@ class _QueueTablePanel extends StatelessWidget {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'QUEUE LIVE LIST  |  ترتيب العملاء',
+                    'قائمة العملاء المباشرة | ترتيب العملاء',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -713,7 +711,7 @@ class _QueueTablePanel extends StatelessWidget {
                     border: Border.all(color: const Color(0xFF334155)),
                   ),
                   child: Text(
-                    '${tickets.length} CUSTOMERS',
+                    '${tickets.length} عميل',
                     style: const TextStyle(
                       color: Color(0xFFFACC15),
                       fontSize: 14,
@@ -764,11 +762,11 @@ class _QueueHeaderRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: const [
-          _HeaderCell(width: 72, text: 'ORDER'),
-          _HeaderCell(width: 116, text: 'TICKET'),
-          Expanded(flex: 4, child: _HeaderCell(text: 'CUSTOMER')),
-          Expanded(flex: 3, child: _HeaderCell(text: 'CODE / BRANCH')),
-          _HeaderCell(width: 142, text: 'STATUS'),
+          _HeaderCell(width: 72, text: 'الترتيب'),
+          _HeaderCell(width: 116, text: 'التذكرة'),
+          Expanded(flex: 4, child: _HeaderCell(text: 'العميل')),
+          Expanded(flex: 3, child: _HeaderCell(text: 'الكود / الفرع')),
+          _HeaderCell(width: 142, text: 'الحالة'),
         ],
       ),
     );
@@ -833,7 +831,7 @@ class _QueueDataRow extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(
-              isMain ? 'NOW' : '${index + 1}'.padLeft(2, '0'),
+              isMain ? 'الآن' : '${index + 1}'.padLeft(2, '0'),
               style: TextStyle(
                 color: isMain ? const Color(0xFFFACC15) : const Color(0xFF94A3B8),
                 fontSize: isMain ? 17 : 18,
@@ -893,7 +891,7 @@ class _QueueDataRow extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  isMain ? 'NEXT' : 'WAITING',
+                  isMain ? 'التالي' : 'انتظار',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1149,7 +1147,7 @@ class _BoardLoading extends StatelessWidget {
           CircularProgressIndicator(color: Color(0xFFFACC15)),
           SizedBox(height: 16),
           Text(
-            'Loading live board...',
+            'جاري تحميل شاشة العملاء...',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
           ),
         ],
@@ -1192,7 +1190,7 @@ class _BoardError extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('إعادة المحاولة'),
             ),
           ],
         ),

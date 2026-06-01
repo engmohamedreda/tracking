@@ -51,7 +51,7 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
   AreaCodeEntity? selectedAreaCode;
   MobileSerialEntity? selectedMobileSerial;
 
-  static const List<String> operations = ['Send', 'Receive'];
+  static const List<String> operations = ['إرسال', 'استلام'];
 
   @override
   void dispose() {
@@ -74,12 +74,12 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FB),
         appBar: AppBar(
-          title: const Text('Prepare Survey'),
+          title: const Text('تجهيز الاستبيان'),
           actions: [
             TextButton.icon(
               onPressed: () => Navigator.pop(context, false),
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Back'),
+              label: const Text('رجوع'),
             ),
             const SizedBox(width: 12),
           ],
@@ -182,14 +182,14 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
 
     if (questionsState is! GetSurveyQuestionsSuccess ||
         questionsState.response.questions.isEmpty) {
-      _showMessage('Survey questions are not ready');
+      _showMessage('أسئلة الاستبيان غير جاهزة');
       return;
     }
 
     if (selectedOperation == null ||
         selectedAreaCode == null ||
         selectedMobileSerial == null) {
-      _showMessage('Please complete operation, area code and mobile serial');
+      _showMessage('اكمل نوع العملية وكود المنطقة وسيريال الموبايل');
       return;
     }
 
@@ -240,6 +240,13 @@ class _PageHeader extends StatelessWidget {
 
   const _PageHeader({required this.ticket});
 
+  String _statusLabel(String value) {
+    final lower = value.toLowerCase();
+    if (lower == 'waiting') return 'انتظار';
+    if (lower == 'iscalled') return 'تم النداء';
+    return value.isEmpty ? '-' : value;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -268,7 +275,7 @@ class _PageHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Next ticket survey',
+                  'استبيان العميل التالي',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 15,
@@ -277,7 +284,7 @@ class _PageHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Ticket #${ticket.ticketsNumber}',
+                  'تذكرة رقم ${ticket.ticketsNumber}',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -295,10 +302,10 @@ class _PageHeader extends StatelessWidget {
               ],
             ),
           ),
-          _HeaderInfo(label: 'Company', value: ticket.companyName),
-          _HeaderInfo(label: 'Branch', value: ticket.branchName),
-          _HeaderInfo(label: 'Ticket ID', value: ticket.id.toString()),
-          _HeaderInfo(label: 'Status', value: ticket.status),
+          _HeaderInfo(label: 'الشركة', value: ticket.companyName),
+          _HeaderInfo(label: 'الفرع', value: ticket.branchName),
+          _HeaderInfo(label: 'رقم التذكرة', value: ticket.id.toString()),
+          _HeaderInfo(label: 'الحالة', value: _statusLabel(ticket.status)),
         ],
       ),
     );
@@ -380,8 +387,8 @@ class _FormCard extends StatelessWidget {
           children: [
             _SectionTitle(
               icon: Icons.tune_outlined,
-              title: 'Survey setup',
-              subtitle: 'Select operation, area code and mobile serial.',
+              title: 'تجهيز الاستبيان',
+              subtitle: 'اختار نوع العملية وكود المنطقة وسيريال الموبايل.',
             ),
             const SizedBox(height: 22),
             LayoutBuilder(
@@ -391,7 +398,7 @@ class _FormCard extends StatelessWidget {
                 final operationField = DropdownButtonFormField<String>(
                   value: selectedOperation,
                   decoration: const InputDecoration(
-                    labelText: 'Operation',
+                    labelText: 'نوع العملية',
                     prefixIcon: Icon(Icons.swap_horiz),
                   ),
                   items: operations.map((operation) {
@@ -438,7 +445,7 @@ class _FormCard extends StatelessWidget {
               minLines: 4,
               maxLines: 6,
               decoration: const InputDecoration(
-                labelText: 'Note',
+                labelText: 'ملاحظات',
                 hintText: 'اكتب الملاحظات هنا',
                 prefixIcon: Icon(Icons.note_alt_outlined),
                 alignLabelWithHint: true,
@@ -513,7 +520,7 @@ class _AreaCodeDropdown extends StatelessWidget {
     return BlocBuilder<GetAreaCodeCubit, GetAreaCodeState>(
       builder: (context, state) {
         if (state is GetAreaCodeLoading) {
-          return const _LoadingBox(message: 'Loading area codes...');
+          return const _LoadingBox(message: 'جاري تحميل أكواد المناطق...');
         }
 
         if (state is GetAreaCodeError) {
@@ -539,7 +546,7 @@ class _AreaCodeDropdown extends StatelessWidget {
           value: value,
           isExpanded: true,
           decoration: const InputDecoration(
-            labelText: 'Area Code',
+            labelText: 'كود المنطقة',
             prefixIcon: Icon(Icons.location_on_outlined),
           ),
           items: areaCodes.map((areaCode) {
@@ -569,7 +576,7 @@ class _MobileSerialDropdown extends StatelessWidget {
     return BlocBuilder<GetMobileSerialsCubit, GetMobileSerialsState>(
       builder: (context, state) {
         if (state is GetMobileSerialsLoading) {
-          return const _LoadingBox(message: 'Loading mobile serial...');
+          return const _LoadingBox(message: 'جاري تحميل سيريال الموبايل...');
         }
 
         if (state is GetMobileSerialsError) {
@@ -582,7 +589,7 @@ class _MobileSerialDropdown extends StatelessWidget {
         if (state is GetMobileSerialsSuccess) {
           if (!state.response.hasData) {
             return const _InfoBox(
-              message: 'No mobile serial found for this area code',
+              message: 'لا يوجد سيريال موبايل لهذا الكود',
               icon: Icons.phone_android_outlined,
             );
           }
@@ -595,7 +602,7 @@ class _MobileSerialDropdown extends StatelessWidget {
             value: value,
             isExpanded: true,
             decoration: const InputDecoration(
-              labelText: 'Mobile Serial',
+              labelText: 'سيريال الموبايل',
               prefixIcon: Icon(Icons.phone_android_outlined),
             ),
             items: items.map((mobile) {
@@ -612,9 +619,9 @@ class _MobileSerialDropdown extends StatelessWidget {
           value: null,
           isExpanded: true,
           decoration: const InputDecoration(
-            labelText: 'Mobile Serial',
+            labelText: 'سيريال الموبايل',
             prefixIcon: Icon(Icons.phone_android_outlined),
-            helperText: 'Choose area code first',
+            helperText: 'اختار كود المنطقة أولًا',
           ),
           items: const [],
           onChanged: null,
@@ -645,31 +652,33 @@ class _StatusCard extends StatelessWidget {
           children: [
             _SectionTitle(
               icon: Icons.fact_check_outlined,
-              title: 'Readiness',
-              subtitle: 'Everything must be ready before opening survey.',
+              title: 'جاهزية البيانات',
+              subtitle: 'يجب تجهيز كل البيانات قبل فتح الاستبيان.',
             ),
             const SizedBox(height: 20),
             _CheckLine(
-              label: selectedOperation ?? 'Operation selected',
+              label: selectedOperation == null
+                  ? 'تم اختيار نوع العملية'
+                  : selectedOperation!,
               done: selectedOperation != null,
             ),
             _CheckLine(
               label: selectedAreaCode == null
-                  ? 'Area code selected'
-                  : 'Area: ${selectedAreaCode!.code}',
+                  ? 'تم اختيار كود المنطقة'
+                  : 'الكود: ${selectedAreaCode!.code}',
               done: selectedAreaCode != null,
             ),
             _CheckLine(
               label: selectedMobileSerial == null
-                  ? 'Mobile serial loaded'
-                  : 'Serial: ${selectedMobileSerial!.serial}',
+                  ? 'تم تحميل سيريال الموبايل'
+                  : 'السيريال: ${selectedMobileSerial!.serial}',
               done: selectedMobileSerial != null,
             ),
             BlocBuilder<GetSurveyQuestionsCubit, GetSurveyQuestionsState>(
               builder: (context, state) {
                 if (state is GetSurveyQuestionsLoading) {
                   return const _CheckLine(
-                    label: 'Loading survey questions...',
+                    label: 'جاري تحميل أسئلة الاستبيان...',
                     done: false,
                   );
                 }
@@ -678,13 +687,13 @@ class _StatusCard extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _CheckLine(label: 'Survey questions error', done: false),
+                      _CheckLine(label: 'خطأ في تحميل أسئلة الاستبيان', done: false),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: () =>
                             context.read<GetSurveyQuestionsCubit>().load(),
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Reload questions'),
+                        label: const Text('إعادة تحميل الأسئلة'),
                       ),
                     ],
                   );
@@ -696,8 +705,8 @@ class _StatusCard extends StatelessWidget {
 
                 return _CheckLine(
                   label: count > 0
-                      ? '$count survey questions ready'
-                      : 'Survey questions',
+                      ? '$count سؤال جاهز للاستبيان'
+                      : 'أسئلة الاستبيان',
                   done: count > 0,
                 );
               },
@@ -780,8 +789,8 @@ class _OpenSurveyBar extends StatelessWidget {
             width: 520,
             child: Text(
               enabled
-                  ? 'All data is ready. You can open the survey now.'
-                  : 'Complete the dropdowns and wait for questions before opening survey.',
+                  ? 'كل البيانات جاهزة، يمكنك فتح الاستبيان الآن.'
+                  : 'اكمل الاختيارات وانتظر تحميل الأسئلة قبل فتح الاستبيان.',
               style: const TextStyle(
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w700,
@@ -793,7 +802,7 @@ class _OpenSurveyBar extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: enabled ? onPressed : null,
               icon: const Icon(Icons.assignment_outlined),
-              label: const Text('Open Survey'),
+              label: const Text('فتح الاستبيان'),
             ),
           ),
         ],
@@ -854,7 +863,7 @@ class _ErrorBox extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: const Text('إعادة المحاولة'),
           ),
         ],
       ),

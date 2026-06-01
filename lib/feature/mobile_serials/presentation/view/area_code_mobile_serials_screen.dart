@@ -44,7 +44,7 @@ class _AreaCodeMobileSerialsViewState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Area Code Serial'),
+        title: const Text('سيريال حسب كود المنطقة'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -66,19 +66,19 @@ class _AreaCodeMobileSerialsViewState
                 final areaCodes = state.response.areaCodes;
 
                 if (areaCodes.isEmpty) {
-                  return const Text('No area codes found');
+                  return const Text('لا توجد أكواد مناطق');
                 }
 
                 return DropdownButtonFormField<AreaCodeEntity>(
                   value: selectedAreaCode,
                   decoration: const InputDecoration(
-                    labelText: 'Area Code',
+                    labelText: 'كود المنطقة',
                     border: OutlineInputBorder(),
                   ),
                   items: areaCodes.map((areaCode) {
                     return DropdownMenuItem<AreaCodeEntity>(
                       value: areaCode,
-                      child: Text('${areaCode.code} - Id ${areaCode.id}'),
+                      child: Text('${areaCode.code} - الرقم ${areaCode.id}'),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -103,7 +103,7 @@ class _AreaCodeMobileSerialsViewState
             builder: (context, state) {
               if (state is GetMobileSerialsInitial) {
                 return const _InfoBox(
-                  message: 'اختار Area Code عشان نجيب Mobile Serial',
+                  message: 'اختار كود المنطقة علشان نجيب سيريال الموبايل',
                 );
               }
 
@@ -121,7 +121,7 @@ class _AreaCodeMobileSerialsViewState
 
               if (state is GetMobileSerialsSuccess) {
                 if (!state.response.hasData) {
-                  return const _InfoBox(message: 'No serial found');
+                  return const _InfoBox(message: 'لا يوجد سيريال');
                 }
 
                 return _MobileSerialCard(
@@ -154,7 +154,7 @@ class _MobileSerialCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mobile Serial',
+              'سيريال الموبايل',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -163,9 +163,9 @@ class _MobileSerialCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            Text('Id: ${mobileSerial.id}'),
+            Text('الرقم: ${mobileSerial.id}'),
             if (mobileSerial.areaCode.isNotEmpty)
-              Text('Area Code: ${mobileSerial.areaCode}'),
+              Text('كود المنطقة: ${mobileSerial.areaCode}'),
           ],
         ),
       ),
@@ -196,7 +196,7 @@ class _ErrorBox extends StatelessWidget {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: const Text('إعادة المحاولة'),
             ),
           ],
         ),

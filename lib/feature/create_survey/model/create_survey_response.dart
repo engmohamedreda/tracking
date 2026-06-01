@@ -20,8 +20,8 @@ class CreateSurveyResponse {
       return CreateSurveyResponse(
         success: createdId > 0,
         message: createdId > 0
-            ? 'Survey created successfully'
-            : 'Survey not created',
+            ? 'تم حفظ الاستبيان بنجاح'
+            : 'لم يتم حفظ الاستبيان',
         data: json,
         id: createdId,
       );
@@ -30,7 +30,7 @@ class CreateSurveyResponse {
     if (json is bool) {
       return CreateSurveyResponse(
         success: json,
-        message: json ? 'Survey created successfully' : 'Survey not created',
+        message: json ? 'تم حفظ الاستبيان بنجاح' : 'لم يتم حفظ الاستبيان',
         data: json,
       );
     }
@@ -55,7 +55,7 @@ class CreateSurveyResponse {
     return CreateSurveyResponse(
       success: _asBool(successValue) || successValue == null,
       message: _asString(messageValue).isEmpty
-          ? 'Survey created successfully'
+          ? 'تم حفظ الاستبيان بنجاح'
           : _asString(messageValue),
       data: map['data'] ?? json,
       id: createdId,

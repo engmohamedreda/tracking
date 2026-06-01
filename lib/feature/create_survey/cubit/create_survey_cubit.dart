@@ -29,7 +29,7 @@ class CreateSurveyCubit extends Cubit<CreateSurveyState> {
     required CreateSurveyRequest request,
   }) async {
     _stopFingerprintPolling = false;
-    emit(CreateSurveyLoading(message: 'Saving survey...'));
+    emit(CreateSurveyLoading(message: 'جاري حفظ الاستبيان...'));
     await _createSurveyOnly(request: request);
   }
 
@@ -44,7 +44,7 @@ class CreateSurveyCubit extends Cubit<CreateSurveyState> {
   }) async {
     _stopFingerprintPolling = false;
 
-    emit(CreateSurveyLoading(message: 'Saving survey...'));
+    emit(CreateSurveyLoading(message: 'جاري حفظ الاستبيان...'));
 
     final createResult = await createSurveyUseCase(request: request);
 
@@ -62,7 +62,7 @@ class CreateSurveyCubit extends Cubit<CreateSurveyState> {
             CreateSurveyError(
               ServerError(
                 errorMsg:
-                    'Create survey succeeded but did not return a valid survey id.',
+                    'تم إنشاء الاستبيان لكن لم يرجع رقم استبيان صحيح.',
               ),
             ),
           );
@@ -189,8 +189,8 @@ class CreateSurveyCubit extends Cubit<CreateSurveyState> {
       emit(
         CreateSurveyLoading(
           message: attempt == 1
-              ? 'Checking fingerprint status...'
-              : 'Refreshing fingerprint status...',
+              ? 'جاري التحقق من حالة البصمة...'
+              : 'جاري تحديث حالة البصمة...',
         ),
       );
 

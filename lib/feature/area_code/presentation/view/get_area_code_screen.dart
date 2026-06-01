@@ -15,7 +15,7 @@ class GetAreaCodeScreen extends StatelessWidget {
       create: (_) => getIt<GetAreaCodeCubit>()..load(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Area Codes'),
+          title: const Text('أكواد المناطق'),
         ),
         body: BlocBuilder<GetAreaCodeCubit, GetAreaCodeState>(
           builder: (context, state) {
@@ -38,7 +38,7 @@ class GetAreaCodeScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () =>
                             context.read<GetAreaCodeCubit>().load(),
-                        child: const Text('Retry'),
+                        child: const Text('إعادة المحاولة'),
                       ),
                     ],
                   ),
@@ -51,7 +51,7 @@ class GetAreaCodeScreen extends StatelessWidget {
 
               if (areaCodes.isEmpty) {
                 return const Center(
-                  child: Text('No area codes found'),
+                  child: Text('لا توجد أكواد مناطق'),
                 );
               }
 
@@ -94,7 +94,7 @@ class _AreaCodeCard extends StatelessWidget {
           areaCode.code,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        subtitle: Text('Id: ${areaCode.id}'),
+        subtitle: Text('الرقم: ${areaCode.id}'),
       ),
     );
   }

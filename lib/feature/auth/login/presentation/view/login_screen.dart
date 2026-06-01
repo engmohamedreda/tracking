@@ -193,7 +193,7 @@ class _BrandPanel extends StatelessWidget {
           ),
           SizedBox(height: compact ? 18 : 34),
           Text(
-            'Tracking System',
+            'نظام متابعة التذاكر',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -279,14 +279,14 @@ class _LoginForm extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Welcome back',
+                'مرحبًا بك',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Sign in to continue to the dashboard',
+                'سجّل الدخول للمتابعة إلى لوحة التحكم',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: const Color(0xFF64748B),
                     ),
@@ -297,12 +297,12 @@ class _LoginForm extends StatelessWidget {
                 enabled: !isLoading,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'اسم المستخدم',
                   prefixIcon: Icon(Icons.person_outline),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Username is required';
+                    return 'اسم المستخدم مطلوب';
                   }
                   return null;
                 },
@@ -313,7 +313,7 @@ class _LoginForm extends StatelessWidget {
                 enabled: !isLoading,
                 obscureText: obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'كلمة المرور',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     onPressed: isLoading ? null : onTogglePassword,
@@ -326,7 +326,7 @@ class _LoginForm extends StatelessWidget {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Password is required';
+                    return 'كلمة المرور مطلوبة';
                   }
                   return null;
                 },
@@ -336,7 +336,7 @@ class _LoginForm extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: isLoading ? null : onSubmit,
                 icon: const Icon(Icons.login),
-                label: const Text('Login'),
+                label: const Text('تسجيل الدخول'),
               ),
             ],
           ),

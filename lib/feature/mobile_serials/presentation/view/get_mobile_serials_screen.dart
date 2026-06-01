@@ -25,7 +25,7 @@ class GetMobileSerialsScreen extends StatelessWidget {
         ),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(areaCode == null ? 'Mobile Serial' : 'Serial $areaCode'),
+          title: Text(areaCode == null ? 'سيريال الموبايل' : 'سيريال $areaCode'),
         ),
         body: BlocBuilder<GetMobileSerialsCubit, GetMobileSerialsState>(
           builder: (context, state) {
@@ -49,7 +49,7 @@ class GetMobileSerialsScreen extends StatelessWidget {
                         onPressed: () => context
                             .read<GetMobileSerialsCubit>()
                             .load(areaCodeId: areaCodeId),
-                        child: const Text('Retry'),
+                        child: const Text('إعادة المحاولة'),
                       ),
                     ],
                   ),
@@ -60,7 +60,7 @@ class GetMobileSerialsScreen extends StatelessWidget {
             if (state is GetMobileSerialsSuccess) {
               if (!state.response.hasData) {
                 return const Center(
-                  child: Text('No serial found'),
+                  child: Text('لا يوجد سيريال'),
                 );
               }
 
@@ -106,9 +106,9 @@ class _MobileSerialCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text('Id: ${mobileSerial.id}'),
+            Text('الرقم: ${mobileSerial.id}'),
             if (mobileSerial.areaCode.isNotEmpty)
-              Text('Area Code: ${mobileSerial.areaCode}'),
+              Text('كود المنطقة: ${mobileSerial.areaCode}'),
           ],
         ),
       ),
