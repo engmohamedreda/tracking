@@ -7,18 +7,57 @@ import 'tickets_tv_display_screen.dart';
 import '../../cubit/get_all_tickets_cubit.dart';
 import '../../cubit/get_all_tickets_state.dart';
 import '../../model/ticket_entity.dart';
+import '../../../delete_device_attendence/cubit/delete_device_attendence_cubit.dart';
+import '../../../delete_device_attendence/cubit/delete_device_attendence_state.dart';
 
 class GetAllTicketsScreen extends StatelessWidget {
   const GetAllTicketsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<GetAllTicketsCubit>()..load(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => getIt<GetAllTicketsCubit>()..load()),
+        BlocProvider(create: (_) => getIt<DeleteDeviceAttendenceCubit>()),
+      ],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('لوحة التذاكر'),
           actions: [
+            BlocConsumer<DeleteDeviceAttendenceCubit, DeleteDeviceAttendenceState>(
+              listener: (context, state) {
+                if (state is DeleteDeviceAttendenceSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.response.message)),
+                  );
+                } else if (state is DeleteDeviceAttendenceError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message)),
+                  );
+                }
+              },
+              builder: (context, state) {
+                final loading = state is DeleteDeviceAttendenceLoading;
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 10),
+                  child: FilledButton.tonalIcon(
+                    onPressed: loading
+                        ? null
+                        : () => context
+                            .read<DeleteDeviceAttendenceCubit>()
+                            .deleteDeviceAttendence(),
+                    icon: loading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.fingerprint),
+                    label: const Text('حذف حضور الجهاز'),
+                  ),
+                );
+              },
+            ),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 10),
               child: FilledButton.tonalIcon(

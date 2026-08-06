@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'تطبيق التذاكر',
+      title: 'تطبيق التسليم والاستلام',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Arial',

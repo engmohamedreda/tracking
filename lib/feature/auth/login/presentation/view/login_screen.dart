@@ -193,7 +193,7 @@ class _BrandPanel extends StatelessWidget {
           ),
           SizedBox(height: compact ? 18 : 34),
           Text(
-            'نظام متابعة التذاكر',
+            'نظام متابعة الاستلام والتسليم',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,

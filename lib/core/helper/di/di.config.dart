@@ -30,6 +30,14 @@ import '../../../feature/create_survey/response/interface/i_create_survey_repo.d
     as _i316;
 import '../../../feature/create_survey/response/remote/create_survey_repo.dart'
     as _i841;
+import '../../../feature/delete_device_attendence/cubit/delete_device_attendence_cubit.dart'
+    as _i750;
+import '../../../feature/delete_device_attendence/cubit/delete_device_attendence_usecase.dart'
+    as _i977;
+import '../../../feature/delete_device_attendence/response/interface/i_delete_device_attendence_repo.dart'
+    as _i16;
+import '../../../feature/delete_device_attendence/response/remote/delete_device_attendence_repo.dart'
+    as _i469;
 import '../../../feature/dtickets/delete_tickets/cubit/delete_tickets_cubit.dart'
     as _i506;
 import '../../../feature/dtickets/delete_tickets/cubit/delete_tickets_usecase.dart'
@@ -39,21 +47,21 @@ import '../../../feature/dtickets/delete_tickets/response/interface/i_delete_tic
 import '../../../feature/dtickets/delete_tickets/response/remote/delete_tickets_repo.dart'
     as _i241;
 import '../../../feature/dtickets/no_show_tickets/cubit/no_show_ticket_cubit.dart'
-    as _i1104;
+    as _i69;
 import '../../../feature/dtickets/no_show_tickets/cubit/no_show_ticket_usecase.dart'
-    as _i1105;
+    as _i573;
 import '../../../feature/dtickets/no_show_tickets/response/interface/i_no_show_ticket_repo.dart'
-    as _i1106;
+    as _i586;
 import '../../../feature/dtickets/no_show_tickets/response/remote/no_show_ticket_repo.dart'
-    as _i1107;
+    as _i891;
 import '../../../feature/get_survey_by_id/cubit/get_survey_by_id_cubit.dart'
-    as _i1100;
+    as _i633;
 import '../../../feature/get_survey_by_id/cubit/get_survey_by_id_usecase.dart'
-    as _i1101;
+    as _i720;
 import '../../../feature/get_survey_by_id/response/interface/i_get_survey_by_id_repo.dart'
-    as _i1102;
+    as _i847;
 import '../../../feature/get_survey_by_id/response/remote/get_survey_by_id_repo.dart'
-    as _i1103;
+    as _i575;
 import '../../../feature/mobile_serials/cubit/get_mobile_serials_cubit.dart'
     as _i1007;
 import '../../../feature/mobile_serials/cubit/get_mobile_serials_usecase.dart'
@@ -101,14 +109,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i316.ICreateSurveyRepo>(
       () => _i841.CreateSurveyRepo(gh<_i69.Apimanager>()),
     );
-    gh.lazySingleton<_i1102.IGetSurveyByIdRepo>(
-      () => _i1103.GetSurveyByIdRepo(gh<_i69.Apimanager>()),
-    );
-    gh.lazySingleton<_i1106.INoShowTicketRepo>(
-      () => _i1107.NoShowTicketRepo(gh<_i69.Apimanager>()),
-    );
     gh.lazySingleton<_i751.IGetNextTicketsRepo>(
       () => _i530.GetNextTicketsRepo(gh<_i69.Apimanager>()),
+    );
+    gh.lazySingleton<_i16.IDeleteDeviceAttendenceRepo>(
+      () => _i469.DeleteDeviceAttendenceRepo(gh<_i69.Apimanager>()),
     );
     gh.lazySingleton<_i492.ILoginRepo>(
       () => _i986.LoginRepo(gh<_i69.Apimanager>()),
@@ -120,6 +125,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i496.IDeleteTicketsRepo>(
       () => _i241.DeleteTicketsRepo(gh<_i69.Apimanager>()),
     );
+    gh.lazySingleton<_i586.INoShowTicketRepo>(
+      () => _i891.NoShowTicketRepo(gh<_i69.Apimanager>()),
+    );
+    gh.lazySingleton<_i847.IGetSurveyByIdRepo>(
+      () => _i575.GetSurveyByIdRepo(gh<_i69.Apimanager>()),
+    );
+    gh.factory<_i720.GetSurveyByIdUseCase>(
+      () => _i720.GetSurveyByIdUseCase(gh<_i847.IGetSurveyByIdRepo>()),
+    );
     gh.lazySingleton<_i903.IGetAllTicketsRepo>(
       () => _i873.GetAllTicketsRepo(gh<_i69.Apimanager>()),
     );
@@ -128,12 +142,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i584.DeleteTicketsUseCase>(
       () => _i584.DeleteTicketsUseCase(gh<_i496.IDeleteTicketsRepo>()),
-    );
-    gh.factory<_i1101.GetSurveyByIdUseCase>(
-      () => _i1101.GetSurveyByIdUseCase(gh<_i1102.IGetSurveyByIdRepo>()),
-    );
-    gh.factory<_i1105.NoShowTicketUseCase>(
-      () => _i1105.NoShowTicketUseCase(gh<_i1106.INoShowTicketRepo>()),
     );
     gh.factory<_i387.LoginUseCase>(
       () => _i387.LoginUseCase(gh<_i492.ILoginRepo>()),
@@ -145,26 +153,33 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i141.GetNextTicketsUseCase>(
       () => _i141.GetNextTicketsUseCase(gh<_i751.IGetNextTicketsRepo>()),
     );
+    gh.factory<_i977.DeleteDeviceAttendenceUseCase>(
+      () => _i977.DeleteDeviceAttendenceUseCase(
+        gh<_i16.IDeleteDeviceAttendenceRepo>(),
+      ),
+    );
     gh.factory<_i408.GetAreaCodeUseCase>(
       () => _i408.GetAreaCodeUseCase(gh<_i437.IGetAreaCodeRepo>()),
     );
     gh.factory<_i1035.CreateSurveyUseCase>(
       () => _i1035.CreateSurveyUseCase(gh<_i316.ICreateSurveyRepo>()),
     );
-    gh.factory<_i599.CreateSurveyCubit>(
-      () => _i599.CreateSurveyCubit(
-        gh<_i1035.CreateSurveyUseCase>(),
-        gh<_i1101.GetSurveyByIdUseCase>(),
+    gh.factory<_i750.DeleteDeviceAttendenceCubit>(
+      () => _i750.DeleteDeviceAttendenceCubit(
+        gh<_i977.DeleteDeviceAttendenceUseCase>(),
       ),
-    );
-    gh.factory<_i1100.GetSurveyByIdCubit>(
-      () => _i1100.GetSurveyByIdCubit(gh<_i1101.GetSurveyByIdUseCase>()),
-    );
-    gh.factory<_i1104.NoShowTicketCubit>(
-      () => _i1104.NoShowTicketCubit(gh<_i1105.NoShowTicketUseCase>()),
     );
     gh.factory<_i294.LoginCubit>(
       () => _i294.LoginCubit(gh<_i387.LoginUseCase>()),
+    );
+    gh.factory<_i573.NoShowTicketUseCase>(
+      () => _i573.NoShowTicketUseCase(gh<_i586.INoShowTicketRepo>()),
+    );
+    gh.factory<_i599.CreateSurveyCubit>(
+      () => _i599.CreateSurveyCubit(
+        gh<_i1035.CreateSurveyUseCase>(),
+        gh<_i720.GetSurveyByIdUseCase>(),
+      ),
     );
     gh.factory<_i349.GetAllTicketsUseCase>(
       () => _i349.GetAllTicketsUseCase(gh<_i903.IGetAllTicketsRepo>()),
@@ -172,11 +187,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i789.GetMobileSerialsUseCase>(
       () => _i789.GetMobileSerialsUseCase(gh<_i546.IGetMobileSerialsRepo>()),
     );
+    gh.factory<_i633.GetSurveyByIdCubit>(
+      () => _i633.GetSurveyByIdCubit(gh<_i720.GetSurveyByIdUseCase>()),
+    );
     gh.factory<_i506.DeleteTicketsCubit>(
       () => _i506.DeleteTicketsCubit(gh<_i584.DeleteTicketsUseCase>()),
     );
     gh.factory<_i762.GetNextTicketsCubit>(
       () => _i762.GetNextTicketsCubit(gh<_i141.GetNextTicketsUseCase>()),
+    );
+    gh.factory<_i69.NoShowTicketCubit>(
+      () => _i69.NoShowTicketCubit(gh<_i573.NoShowTicketUseCase>()),
     );
     gh.factory<_i173.GetAreaCodeCubit>(
       () => _i173.GetAreaCodeCubit(gh<_i408.GetAreaCodeUseCase>()),
