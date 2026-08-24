@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:typed_data';
+import '../../../../core/helper/Api/ApiManager/ApiManager.dart';
+import '../../../../core/helper/Api/ApiManager/EndPoint.dart';
 import '../../../../core/helper/di/di.dart';
+import '../../../auth/login/presentation/view/login_screen.dart';
 import '../../../ntickets/presentation/view/get_next_tickets_screen.dart';
 import 'tickets_tv_display_screen.dart';
 import '../../cubit/get_all_tickets_cubit.dart';
@@ -24,16 +30,19 @@ class GetAllTicketsScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('لوحة التذاكر'),
           actions: [
-            BlocConsumer<DeleteDeviceAttendenceCubit, DeleteDeviceAttendenceState>(
+            BlocConsumer<
+              DeleteDeviceAttendenceCubit,
+              DeleteDeviceAttendenceState
+            >(
               listener: (context, state) {
                 if (state is DeleteDeviceAttendenceSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(state.response.message)),
                   );
                 } else if (state is DeleteDeviceAttendenceError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.message)));
                 }
               },
               builder: (context, state) {
@@ -44,8 +53,8 @@ class GetAllTicketsScreen extends StatelessWidget {
                     onPressed: loading
                         ? null
                         : () => context
-                            .read<DeleteDeviceAttendenceCubit>()
-                            .deleteDeviceAttendence(),
+                              .read<DeleteDeviceAttendenceCubit>()
+                              .deleteDeviceAttendence(),
                     icon: loading
                         ? const SizedBox(
                             width: 18,
@@ -61,6 +70,25 @@ class GetAllTicketsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 10),
               child: FilledButton.tonalIcon(
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('token');
+
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('تسجيل الخروج'),
+              ),
+            ),
+            //  _ExportSurveysButton(),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 10),
+              child: FilledButton.tonalIcon(
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -73,6 +101,7 @@ class GetAllTicketsScreen extends StatelessWidget {
                 label: const Text('عرض شاشة العملاء'),
               ),
             ),
+            //_UsersTemplateButton(),
             BlocBuilder<GetAllTicketsCubit, GetAllTicketsState>(
               builder: (context, state) {
                 final isLoading = state is GetAllTicketsLoading;
@@ -115,14 +144,13 @@ class GetAllTicketsScreen extends StatelessWidget {
                         child: tickets.isEmpty
                             ? const _EmptyView()
                             : RefreshIndicator(
-                                onRefresh: () =>
-                                    context.read<GetAllTicketsCubit>().refresh(),
+                                onRefresh: () => context
+                                    .read<GetAllTicketsCubit>()
+                                    .refresh(),
                                 child: LayoutBuilder(
                                   builder: (context, constraints) {
-                                    final isWide = constraints.maxWidth >= 700;
-                                    final cardWidth = isWide
-                                        ? (constraints.maxWidth - 64) / 2
-                                        : constraints.maxWidth;
+                                    final cardWidth =
+                                        (constraints.maxWidth - 64) / 2;
 
                                     return ListView(
                                       padding: const EdgeInsets.fromLTRB(
@@ -140,7 +168,9 @@ class GetAllTicketsScreen extends StatelessWidget {
                                           children: tickets.map((ticket) {
                                             return SizedBox(
                                               width: cardWidth,
-                                              child: _TicketCard(ticket: ticket),
+                                              child: _TicketCard(
+                                                ticket: ticket,
+                                              ),
                                             );
                                           }).toList(),
                                         ),
@@ -178,6 +208,155 @@ class GetAllTicketsScreen extends StatelessWidget {
   }
 }
 
+class _UsersTemplateButton extends StatefulWidget {
+  @override
+  State<_UsersTemplateButton> createState() => _UsersTemplateButtonState();
+}
+
+class _ExportSurveysButton extends StatefulWidget {
+  @override
+  State<_ExportSurveysButton> createState() => _ExportSurveysButtonState();
+}
+
+class _ExportSurveysButtonState extends State<_ExportSurveysButton> {
+  bool _isLoading = false;
+
+  Future<void> _exportSurveys() async {
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final response = await getIt<Apimanager>().getData(
+        endpoint: Endpoint.exportSurveys,
+        queryParameters: const {'page': 1, 'pageSize': 100},
+        options: Options(
+          responseType: ResponseType.bytes,
+          contentType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          validateStatus: (status) => true,
+        ),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw Exception('تعذر تصدير الاستبيانات (${response.statusCode})');
+      }
+
+      final data = response.data;
+      if (data is! List<int> || data.isEmpty) {
+        throw Exception('استجابة ملف الاستبيانات غير صحيحة');
+      }
+
+      final savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'حفظ الاستبيانات',
+        fileName: 'export-surveys.xlsx',
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        bytes: Uint8List.fromList(data),
+      );
+
+      if (!mounted || savedPath == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تصدير الاستبيانات بنجاح')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('فشل تصدير الاستبيانات: $error')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 10),
+      child: FilledButton.tonalIcon(
+        onPressed: _isLoading ? null : _exportSurveys,
+        icon: _isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.local_shipping_outlined),
+        label: const Text('تسليم'),
+      ),
+    );
+  }
+}
+
+class _UsersTemplateButtonState extends State<_UsersTemplateButton> {
+  bool _isLoading = false;
+
+  Future<void> _downloadTemplate() async {
+    if (_isLoading) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final response = await getIt<Apimanager>().getData(
+        endpoint: Endpoint.usersTemplate,
+        options: Options(
+          responseType: ResponseType.bytes,
+          contentType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          validateStatus: (status) => true,
+        ),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode < 200 || statusCode >= 300) {
+        throw Exception('تعذر تحميل قالب العملاء (${response.statusCode})');
+      }
+
+      final data = response.data;
+      if (data is! List<int>) {
+        throw Exception('استجابة ملف القالب غير صحيحة');
+      }
+
+      final savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'حفظ قالب العملاء',
+        fileName: 'users-template.xlsx',
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        bytes: Uint8List.fromList(data),
+      );
+
+      if (!mounted || savedPath == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تحميل قالب العملاء بنجاح')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('فشل تحميل قالب العملاء: $error')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 10),
+      child: FilledButton.tonalIcon(
+        onPressed: _isLoading ? null : _downloadTemplate,
+        icon: _isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download_outlined),
+        label: const Text('تحميل قالب العملاء'),
+      ),
+    );
+  }
+}
+
 class _HeaderCard extends StatelessWidget {
   final List<TicketEntity> tickets;
 
@@ -208,16 +387,16 @@ class _HeaderCard extends StatelessWidget {
               Text(
                 'كل التذاكر',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'تابع العملاء المنتظرين وافتح العميل التالي.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.82),
-                    ),
+                  color: Colors.white.withOpacity(0.82),
+                ),
               ),
             ],
           );
@@ -254,10 +433,7 @@ class _StatPill extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatPill({
-    required this.label,
-    required this.value,
-  });
+  const _StatPill({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -275,9 +451,9 @@ class _StatPill extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -300,6 +476,7 @@ class _TicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.of(context).size.width < 600;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -326,15 +503,9 @@ class _TicketCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'تذكرة رقم ${ticket.ticketsNumber}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'الرقم: ${ticket.id}',
-                        style: const TextStyle(color: Color(0xFF64748B)),
+                        '${ticket.ticketsNumber}',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
                       ),
                     ],
                   ),
@@ -347,21 +518,25 @@ class _TicketCard extends StatelessWidget {
               icon: Icons.person_outline,
               label: 'المندوب',
               value: ticket.representativeName,
+              showLabel: !isCompact,
             ),
             _InfoTile(
               icon: Icons.apartment_outlined,
               label: 'الشركة',
               value: ticket.companyName,
+              showLabel: !isCompact,
             ),
             _InfoTile(
               icon: Icons.store_mall_directory_outlined,
               label: 'الفرع',
               value: ticket.branchName,
+              showLabel: !isCompact,
             ),
             _InfoTile(
               icon: Icons.fingerprint,
               label: 'البصمة',
               value: ticket.representativeFingerPrint,
+              showLabel: !isCompact,
             ),
           ],
         ),
@@ -374,11 +549,13 @@ class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final bool showLabel;
 
   const _InfoTile({
     required this.icon,
     required this.label,
     required this.value,
+    this.showLabel = true,
   });
 
   @override
@@ -392,16 +569,19 @@ class _InfoTile extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style,
                 children: [
-                  TextSpan(
-                    text: '$label: ',
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontWeight: FontWeight.w700,
+                  if (showLabel)
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
                   TextSpan(
                     text: value.isEmpty ? '-' : value,
                     style: const TextStyle(fontWeight: FontWeight.w700),
@@ -434,8 +614,8 @@ class _StatusChip extends StatelessWidget {
     final color = lower == 'waiting'
         ? const Color(0xFFF59E0B)
         : lower == 'iscalled'
-            ? const Color(0xFF2563EB)
-            : const Color(0xFF0F766E);
+        ? const Color(0xFF2563EB)
+        : const Color(0xFF0F766E);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -445,10 +625,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         _statusLabel(status),
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w900,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -526,9 +703,7 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('لا توجد تذاكر'),
-    );
+    return const Center(child: Text('لا توجد تذاكر'));
   }
 }
 
@@ -536,10 +711,7 @@ class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -556,10 +728,7 @@ class _ErrorView extends StatelessWidget {
                 size: 42,
               ),
               const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-              ),
+              Text(message, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: onRetry,

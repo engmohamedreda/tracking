@@ -51,7 +51,11 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
   AreaCodeEntity? selectedAreaCode;
   MobileSerialEntity? selectedMobileSerial;
 
-  static const List<String> operations = ['إرسال', 'استلام'];
+  static const List<String> operations = ['تسليم', 'استلام'];
+
+  /// نفس قائمة الملاحظات المستخدمة في شاشة حفظ الاستبيان،
+  /// عشان الملاحظة المختارة هنا تظهر هناك بنفس القيمة.
+  static const List<String> noteOptions = surveyNoteOptions;
 
   @override
   void dispose() {
@@ -286,9 +290,9 @@ class _PageHeader extends StatelessWidget {
                 Text(
                   'تذكرة رقم ${ticket.ticketsNumber}',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -440,16 +444,24 @@ class _FormCard extends StatelessWidget {
               onChanged: onMobileChanged,
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: noteController,
-              minLines: 4,
-              maxLines: 6,
+            DropdownButtonFormField<String>(
+              value:
+                  _TicketSurveySetupViewState.noteOptions.contains(
+                    noteController.text,
+                  )
+                  ? noteController.text
+                  : null,
               decoration: const InputDecoration(
                 labelText: 'ملاحظات',
-                hintText: 'اكتب الملاحظات هنا',
                 prefixIcon: Icon(Icons.note_alt_outlined),
-                alignLabelWithHint: true,
               ),
+              hint: const Text('اختر الملاحظة'),
+              items: _TicketSurveySetupViewState.noteOptions.map((note) {
+                return DropdownMenuItem<String>(value: note, child: Text(note));
+              }).toList(),
+              onChanged: (value) {
+                noteController.text = value ?? '';
+              },
             ),
           ],
         ),

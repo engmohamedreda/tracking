@@ -119,6 +119,9 @@ class _LiveBoardBody extends StatelessWidget {
   final int secondsLeft;
   final Future<void> Function() onRefresh;
 
+  /// عدد العملاء اللي بيتعرضوا في بانل "آخر العملاء".
+  static const int _lastCustomersCount = 5;
+
   const _LiveBoardBody({
     required this.tickets,
     required this.lastUpdated,
@@ -144,6 +147,13 @@ class _LiveBoardBody extends StatelessWidget {
     final customersAfterMain = hasCalledCustomer
         ? waitingTickets
         : waitingTickets.skip(1).toList();
+
+    // آخر 5 عملاء في نهاية الطابور، بدون اللي واقفين على الشباك
+    // (customersAfterMain أصلاً مستبعد منها التذاكر اللي تم النداء عليها)
+    final lastCustomers = customersAfterMain.length > _lastCustomersCount
+        ? customersAfterMain
+              .sublist(customersAfterMain.length - _lastCustomersCount)
+        : customersAfterMain;
 
     final allBoardTickets = <TicketEntity>[
       if (mainTicket != null) mainTicket,
@@ -191,7 +201,7 @@ class _LiveBoardBody extends StatelessWidget {
                                   Expanded(
                                     flex: 4,
                                     child: _CustomersAfterPanel(
-                                      tickets: customersAfterMain.take(4).toList(),
+                                      tickets: lastCustomers,
                                     ),
                                   ),
                                   SizedBox(height: gap),
@@ -220,7 +230,7 @@ class _LiveBoardBody extends StatelessWidget {
                             SizedBox(
                               height: 330,
                               child: _CustomersAfterPanel(
-                                tickets: customersAfterMain.take(4).toList(),
+                                tickets: lastCustomers,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -503,9 +513,41 @@ class _MainCustomerPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
+                _MainCustomerName(ticket: ticket!),
+                const SizedBox(height: 12),
                 _MainCustomerInfo(ticket: ticket!),
               ],
             ),
+    );
+  }
+}
+
+class _MainCustomerName extends StatelessWidget {
+  final TicketEntity ticket;
+
+  const _MainCustomerName({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1F35),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF1D4ED8)),
+      ),
+      child: Text(
+        'اسم العميل: ${_safe(ticket.representativeName)}',
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 }
@@ -573,7 +615,7 @@ class _CustomersAfterPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _SectionTitle(
-            title: 'العملاء اللي بعده',
+            title: 'آخر 5 عملاء في الطابور',
             subtitle: '',
             icon: Icons.format_list_numbered_rtl_outlined,
             color: Color(0xFF38BDF8),
@@ -1104,7 +1146,7 @@ class _NoUpcomingCustomers extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        'لا يوجد عملاء بعده حاليًا',
+        'لا يوجد عملاء في الطابور حاليًا',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,

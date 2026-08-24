@@ -1,27 +1,31 @@
-import 'dart:convert';
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../../../../core/helper/di/di.dart';
 import '../../cubit/create_survey_cubit.dart';
 import '../../cubit/create_survey_state.dart';
 import '../../model/survey_answer_request.dart';
 import '../../model/survey_attachment_request.dart';
-
+import 'web_camera_dialog_stub.dart'
+    if (dart.library.html) 'web_camera_dialog_web.dart'
+    as web_camera;
 class CreateSurveyQuestionInput {
   final int id;
   final String title;
-
-  const CreateSurveyQuestionInput({
-    required this.id,
-    required this.title,
-  });
+  const CreateSurveyQuestionInput({required this.id, required this.title});
 }
 
+/// المصدر الوحيد لقائمة الملاحظات.
+/// مستخدمة في شاشة تجهيز الاستبيان وشاشة حفظ الاستبيان،
+/// والقيم من غير مسافات زائدة عشان الـ trim ما يكسرش اختيار الـ Dropdown.
+const List<String> surveyNoteOptions = [
+  'لا يوجد',
+  'كسر في الاسكرين',
+  'بدون سكرين',
+  'بطاريه منتفخه',
+  'سوكت الشاحن لا يعمل',
+];
 class CreateSurveyScreen extends StatefulWidget {
   final int companyId;
   final int brandId;
@@ -35,7 +39,6 @@ class CreateSurveyScreen extends StatefulWidget {
   final String status;
   final String initialNote;
   final List<SurveyAttachmentRequest> attachments;
-
   const CreateSurveyScreen({
     super.key,
     required this.companyId,
@@ -51,38 +54,39 @@ class CreateSurveyScreen extends StatefulWidget {
     this.initialNote = '',
     this.attachments = const [],
   });
-
   @override
   State<CreateSurveyScreen> createState() => _CreateSurveyScreenState();
 }
-
 class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
   final TextEditingController noteController = TextEditingController();
   final ImagePicker imagePicker = ImagePicker();
   final Map<int, bool> answers = {};
   late final List<SurveyAttachmentRequest> selectedAttachments;
-
   static const String fixedDateText = '2026-05-23T06:36:23.928Z';
+  static const List<String> noteOptions = surveyNoteOptions;
 
+  /// أرقام الأسئلة (زي ما بتظهر على الشاشة) اللي إجابتها الافتراضية "نعم".
+  static const Set<int> defaultYesQuestionNumbers = {2, 3};
   @override
   void initState() {
     super.initState();
     noteController.text = widget.initialNote;
-    selectedAttachments = List<SurveyAttachmentRequest>.from(widget.attachments);
-
-    for (final question in widget.questions) {
-      answers[question.id] = false;
+    selectedAttachments = List<SurveyAttachmentRequest>.from(
+      widget.attachments,
+    );
+    for (var index = 0; index < widget.questions.length; index++) {
+      final questionNumber = index + 1;
+      answers[widget.questions[index].id] = defaultYesQuestionNumbers.contains(
+        questionNumber,
+      );
     }
   }
-
   @override
   void dispose() {
     noteController.dispose();
     super.dispose();
   }
-
   int get yesCount => answers.values.where((value) => value).length;
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -96,7 +100,10 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
               padding: const EdgeInsetsDirectional.only(end: 18),
               child: Center(
                 child: Chip(
-                  avatar: const Icon(Icons.confirmation_number_outlined, size: 18),
+                  avatar: const Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 18,
+                  ),
                   label: Text('تذكرة ${widget.ticketId}'),
                 ),
               ),
@@ -106,16 +113,16 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
         body: BlocConsumer<CreateSurveyCubit, CreateSurveyState>(
           listener: (context, state) {
             if (state is CreateSurveySuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.response.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.response.message)));
               Navigator.pop(context, true);
             }
 
             if (state is CreateSurveyError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.failure.errorMsg)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.failure.errorMsg)));
             }
           },
           builder: (context, state) {
@@ -152,7 +159,8 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
                                         companyId: widget.companyId,
                                         brandId: widget.brandId,
                                         mobileId: widget.mobileId,
-                                        representativeId: widget.representativeId,
+                                        representativeId:
+                                            widget.representativeId,
                                         areaId: widget.areaId,
                                         ticketId: widget.ticketId,
                                         status: widget.status,
@@ -196,7 +204,8 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
                                   }
 
                                   return Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(flex: 4, child: sideColumn),
                                       const SizedBox(width: 16),
@@ -245,10 +254,7 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
     for (final image in images) {
       final bytes = await image.readAsBytes();
       pickedAttachments.add(
-        SurveyAttachmentRequest(
-          fileName: image.name,
-          bytes: bytes,
-        ),
+        SurveyAttachmentRequest(fileName: image.name, bytes: bytes),
       );
     }
 
@@ -258,16 +264,29 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
   }
 
   Future<void> _pickImageFromCamera() async {
-    final attachment = await showDialog<SurveyAttachmentRequest>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const _ExternalWebCameraDialog(),
-    );
+    if (kIsWeb) {
+      final attachment = await web_camera.showWebCameraDialog(context);
+      if (attachment == null || !mounted) return;
 
-    if (attachment == null) return;
+      setState(() {
+        selectedAttachments.add(attachment);
+      });
+      return;
+    }
+
+    final image = await imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (image == null) return;
+
+    final bytes = await image.readAsBytes();
+    if (!mounted) return;
 
     setState(() {
-      selectedAttachments.add(attachment);
+      selectedAttachments.add(
+        SurveyAttachmentRequest(fileName: image.name, bytes: bytes),
+      );
     });
   }
 
@@ -308,347 +327,9 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-}
-
-
-class _ExternalWebCameraDialog extends StatefulWidget {
-  const _ExternalWebCameraDialog();
-
-  @override
-  State<_ExternalWebCameraDialog> createState() => _ExternalWebCameraDialogState();
-}
-
-class _ExternalWebCameraDialogState extends State<_ExternalWebCameraDialog> {
-  late final html.VideoElement _videoElement;
-  late final String _viewType;
-
-  html.MediaStream? _stream;
-  List<html.MediaDeviceInfo> _videoDevices = const [];
-  String? _selectedDeviceId;
-  bool _isLoading = true;
-  bool _isCapturing = false;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _viewType = 'external-web-camera-${DateTime.now().microsecondsSinceEpoch}';
-    _videoElement = html.VideoElement()
-      ..autoplay = true
-      ..muted = true
-      ..setAttribute('playsinline', 'true')
-      ..style.width = '100%'
-      ..style.height = '100%'
-      ..style.objectFit = 'cover'
-      ..style.borderRadius = '18px'
-      ..style.backgroundColor = '#020617';
-
-    ui_web.platformViewRegistry.registerViewFactory(
-      _viewType,
-          (int viewId) => _videoElement,
-    );
-
-    _initCamera();
-  }
-
-  @override
-  void dispose() {
-    _stopStream();
-    super.dispose();
-  }
-
-  Future<void> _initCamera() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await _startStream(deviceId: _selectedDeviceId);
-      await _loadVideoDevices();
-    } catch (error) {
-      setState(() {
-        _errorMessage = '';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _loadVideoDevices() async {
-    final devices = await html.window.navigator.mediaDevices!.enumerateDevices();
-
-    final videoDevices = devices
-        .whereType<html.MediaDeviceInfo>()
-        .where((device) => device.kind == 'videoinput')
-        .toList(growable: false);
-
-    if (!mounted) return;
-
-    setState(() {
-      _videoDevices = videoDevices;
-
-      if (_selectedDeviceId == null && videoDevices.isNotEmpty) {
-        _selectedDeviceId = videoDevices.first.deviceId;
-      }
-    });
-  }
-
-  Future<void> _startStream({String? deviceId}) async {
-    _stopStream();
-
-    final constraints = <String, dynamic>{
-      'audio': false,
-      'video': <String, dynamic>{
-        if (deviceId != null && deviceId.isNotEmpty)
-          'deviceId': <String, dynamic>{'exact': deviceId},
-        'width': <String, dynamic>{'ideal': 1280},
-        'height': <String, dynamic>{'ideal': 720},
-      },
-    };
-
-    final stream = await html.window.navigator.mediaDevices!.getUserMedia(constraints);
-
-    _stream = stream;
-    _videoElement.srcObject = stream;
-    await _videoElement.play();
-  }
-
-  void _stopStream() {
-    final stream = _stream;
-    if (stream == null) return;
-
-    for (final track in stream.getTracks()) {
-      track.stop();
-    }
-
-    _stream = null;
-    _videoElement.srcObject = null;
-  }
-
-  Future<void> _changeCamera(String? deviceId) async {
-    if (deviceId == null || deviceId == _selectedDeviceId) return;
-
-    setState(() {
-      _selectedDeviceId = deviceId;
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await _startStream(deviceId: deviceId);
-      await _loadVideoDevices();
-    } catch (error) {
-      setState(() {
-        _errorMessage = 'مش قادر أفتح الكاميرا المختارة. جرب كاميرا تانية أو اقفل أي برنامج مستخدم الكاميرا.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  String _deviceLabel(html.MediaDeviceInfo device, int index) {
-    final Object? rawLabel = device.label;
-    final label = rawLabel == null ? '' : rawLabel.toString().trim();
-
-    if (label.isNotEmpty) return label;
-    return 'كاميرا ${index + 1}';
-  }
-
-  Future<void> _captureImage() async {
-    if (_isCapturing) return;
-
-    setState(() {
-      _isCapturing = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final width = _videoElement.videoWidth;
-      final height = _videoElement.videoHeight;
-
-      if (width <= 0 || height <= 0) {
-        throw Exception('معاينة الكاميرا غير جاهزة');
-      }
-
-      final canvas = html.CanvasElement(width: width, height: height);
-      canvas.context2D.drawImageScaled(_videoElement, 0, 0, width, height);
-
-      final dataUrl = canvas.toDataUrl('image/jpeg');
-      final commaIndex = dataUrl.indexOf(',');
-      if (commaIndex < 0) {
-        throw Exception('بيانات الصورة غير صحيحة');
-      }
-
-      final bytes = base64Decode(dataUrl.substring(commaIndex + 1));
-      final now = DateTime.now().millisecondsSinceEpoch;
-
-      if (!mounted) return;
-
-      Navigator.of(context).pop(
-        SurveyAttachmentRequest(
-          fileName: 'survey_camera_$now.jpg',
-          bytes: bytes,
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = 'حصل خطأ أثناء التقاط الصورة. جرب تاني.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isCapturing = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.camera_alt_outlined, color: Color(0xFF2563EB)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'الكاميرا الخارجية',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _isCapturing
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              if (_videoDevices.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedDeviceId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'اختار الكاميرا',
-                    prefixIcon: Icon(Icons.videocam_outlined),
-                  ),
-                  items: _videoDevices.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final device = entry.value;
-
-                    return DropdownMenuItem<String>(
-                      value: device.deviceId,
-                      child: Text(
-                        _deviceLabel(device, index),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: _isLoading || _isCapturing ? null : _changeCamera,
-                ),
-                const SizedBox(height: 14),
-              ],
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: HtmlElementView(viewType: _viewType),
-                    ),
-                    if (_isLoading)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0x990F172A),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Center(child: CircularProgressIndicator()),
-                      ),
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xEEDC2626),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Center(
-                          child: Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.end,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _isLoading || _isCapturing ? null : _initCamera,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('تحديث الكاميرات'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading || _isCapturing || _errorMessage != null
-                        ? null
-                        : _captureImage,
-                    icon: _isCapturing
-                        ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                        : const Icon(Icons.camera),
-                    label: const Text('التقاط صورة'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text('',textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w700,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -686,7 +367,6 @@ class _SurveyHeader extends StatelessWidget {
           ),
         ],
       ),
-
     );
   }
 }
@@ -695,10 +375,7 @@ class _HeaderStat extends StatelessWidget {
   final String label;
   final String value;
 
-  const _HeaderStat({
-    required this.label,
-    required this.value,
-  });
+  const _HeaderStat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -760,9 +437,7 @@ class _SurveyDataCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-
-    );
+    return Card();
   }
 }
 
@@ -770,10 +445,7 @@ class _NoteCard extends StatelessWidget {
   final TextEditingController controller;
   final bool isLoading;
 
-  const _NoteCard({
-    required this.controller,
-    required this.isLoading,
-  });
+  const _NoteCard({required this.controller, required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
@@ -789,16 +461,24 @@ class _NoteCard extends StatelessWidget {
               subtitle: 'اكتب أي ملاحظة خاصة بالاستبيان.',
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              minLines: 4,
-              maxLines: 7,
-              enabled: !isLoading,
-              textDirection: TextDirection.rtl,
+            DropdownButtonFormField<String>(
+              value:
+                  _CreateSurveyScreenState.noteOptions.contains(controller.text)
+                  ? controller.text
+                  : null,
               decoration: const InputDecoration(
-                hintText: 'اكتب الملاحظات هنا',
-                alignLabelWithHint: true,
+                labelText: 'الملاحظة',
+                prefixIcon: Icon(Icons.note_alt_outlined),
               ),
+              hint: const Text('اختر الملاحظة'),
+              items: _CreateSurveyScreenState.noteOptions.map((note) {
+                return DropdownMenuItem<String>(value: note, child: Text(note));
+              }).toList(),
+              onChanged: isLoading
+                  ? null
+                  : (value) {
+                      controller.text = value ?? '';
+                    },
             ),
           ],
         ),
@@ -946,7 +626,9 @@ class _QuestionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = value ? const Color(0xFF0F766E) : const Color(0xFFDC2626);
+    final activeColor = value
+        ? const Color(0xFF0F766E)
+        : const Color(0xFFDC2626);
     final activeBg = value ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
 
     return Container(
@@ -1024,8 +706,8 @@ class _QuestionTile extends StatelessWidget {
             onSelectionChanged: isLoading
                 ? null
                 : (selection) {
-              onChanged(selection.first);
-            },
+                    onChanged(selection.first);
+                  },
           );
 
           if (!isWide) {
@@ -1034,7 +716,10 @@ class _QuestionTile extends StatelessWidget {
               children: [
                 questionText,
                 const SizedBox(height: 14),
-                Align(alignment: AlignmentDirectional.centerEnd, child: buttons),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: buttons,
+                ),
               ],
             );
           }
@@ -1085,9 +770,9 @@ class _SectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 2),
               Text(
@@ -1100,10 +785,7 @@ class _SectionTitle extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 12),
-          trailing!,
-        ],
+        if (trailing != null) ...[const SizedBox(width: 12), trailing!],
       ],
     );
   }
@@ -1113,10 +795,7 @@ class _DataPill extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DataPill({
-    required this.label,
-    required this.value,
-  });
+  const _DataPill({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1142,10 +821,7 @@ class _DateBox extends StatelessWidget {
   final String title;
   final String value;
 
-  const _DateBox({
-    required this.title,
-    required this.value,
-  });
+  const _DateBox({required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1212,7 +888,9 @@ class _AttachmentPreview extends StatelessWidget {
           Stack(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
                 child: Image.memory(
                   attachment.bytes,
                   height: 104,
@@ -1253,10 +931,7 @@ class _AttachmentPreview extends StatelessWidget {
               attachment.fileName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
           ),
         ],
@@ -1282,7 +957,6 @@ class _EmptyImagesBox extends StatelessWidget {
         children: [
           Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
           SizedBox(width: 12),
-
         ],
       ),
     );
@@ -1357,7 +1031,10 @@ class _SubmitBar extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    _BottomPill(label: 'الأسئلة', value: questionsCount.toString()),
+                    _BottomPill(
+                      label: 'الأسئلة',
+                      value: questionsCount.toString(),
+                    ),
                     _BottomPill(label: 'نعم', value: yesCount.toString()),
                     _BottomPill(label: 'الصور', value: imagesCount.toString()),
                   ],
@@ -1369,10 +1046,10 @@ class _SubmitBar extends StatelessWidget {
                     onPressed: canSubmit ? onSubmit : null,
                     icon: isLoading
                         ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.cloud_upload_outlined),
                     label: const Text('حفظ الاستبيان'),
                   ),
@@ -1406,10 +1083,7 @@ class _BottomPill extends StatelessWidget {
   final String label;
   final String value;
 
-  const _BottomPill({
-    required this.label,
-    required this.value,
-  });
+  const _BottomPill({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1443,10 +1117,7 @@ class _LoadingDialog extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 18),
-            Text(
-              message,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
+            Text(message, style: const TextStyle(fontWeight: FontWeight.w800)),
           ],
         ),
       ),

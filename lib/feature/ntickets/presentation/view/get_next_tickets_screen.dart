@@ -143,67 +143,52 @@ class _GetNextTicketsView extends StatelessWidget {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    ConstrainedBox(
-                                      constraints:
-                                          const BoxConstraints(maxWidth: 220),
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: OutlinedButton.icon(
-                                          onPressed: isBusy || ticket == null
-                                              ? null
-                                              : () => _confirmDelete(context, ticket),
-                                          icon: isDeleteLoading
-                                              ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.delete_outline),
-                                          label: const Text('حذف'),
-                                        ),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: isBusy || ticket == null
+                                            ? null
+                                            : () => _confirmDelete(context, ticket),
+                                        icon: isDeleteLoading
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(Icons.delete_outline),
+                                        label: const Text('حذف'),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    ConstrainedBox(
-                                      constraints:
-                                          const BoxConstraints(maxWidth: 220),
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: FilledButton.tonalIcon(
-                                          onPressed: isBusy || ticket == null
-                                              ? null
-                                              : () => _confirmNoShow(context, ticket),
-                                          icon: isNoShowLoading
-                                              ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.person_off_outlined),
-                                          label: const Text('لم يحضر'),
-                                        ),
+                                    Expanded(
+                                      child: FilledButton.tonalIcon(
+                                        onPressed: isBusy || ticket == null
+                                            ? null
+                                            : () => _confirmNoShow(context, ticket),
+                                        icon: isNoShowLoading
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(Icons.person_off_outlined),
+                                        label: const Text('لم يحضر'),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    ConstrainedBox(
-                                      constraints:
-                                          const BoxConstraints(maxWidth: 250),
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton.icon(
-                                          onPressed: isBusy || ticket == null
-                                              ? null
-                                              : () => _openTicketSetup(
-                                                    context,
-                                                    ticket,
-                                                  ),
-                                          icon: const Icon(Icons.arrow_forward),
-                                          label: const Text('التالي'),
-                                        ),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: isBusy || ticket == null
+                                            ? null
+                                            : () => _openTicketSetup(
+                                                  context,
+                                                  ticket,
+                                                ),
+                                        icon: const Icon(Icons.arrow_forward),
+                                        label: const Text('التالي'),
                                       ),
                                     ),
                                   ],
@@ -339,6 +324,7 @@ class _Body extends StatelessWidget {
               final isWide = constraints.maxWidth >= 880;
               if (!isWide) {
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _MainTicketCard(ticket: currentTicket),
                     const SizedBox(height: 16),
@@ -351,12 +337,10 @@ class _Body extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    flex: 6,
                     child: _MainTicketCard(ticket: currentTicket),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    flex: 4,
                     child: _TimelineCard(ticket: currentTicket),
                   ),
                 ],
@@ -488,41 +472,42 @@ class _MainTicketCard extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 18),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _InfoBox(
-                  icon: Icons.confirmation_number_outlined,
-                  label: 'رقم التذكرة',
-                  value: ticket.id.toString(),
-                ),
-                _InfoBox(
-                  icon: Icons.person_outline,
-                  label: 'المندوب',
-                  value: ticket.representativeName,
-                ),
-                _InfoBox(
-                  icon: Icons.apartment_outlined,
-                  label: 'الشركة',
-                  value: ticket.companyName,
-                ),
-                _InfoBox(
-                  icon: Icons.store_mall_directory_outlined,
-                  label: 'الفرع',
-                  value: ticket.branchName,
-                ),
-                _InfoBox(
-                  icon: Icons.fingerprint,
-                  label: 'البصمة',
-                  value: ticket.representativeFingerPrint,
-                ),
-                _InfoBox(
-                  icon: Icons.badge_outlined,
-                  label: 'رقم المندوب',
-                  value: ticket.representativeId.toString(),
-                ),
-              ],
+            _TimelineItem(
+              icon: Icons.confirmation_number_outlined,
+              label: 'رقم التذكرة',
+              value: ticket.id.toString(),
+              active: true,
+            ),
+            _TimelineItem(
+              icon: Icons.person_outline,
+              label: 'المندوب',
+              value: ticket.representativeName,
+              active: true,
+            ),
+            _TimelineItem(
+              icon: Icons.apartment_outlined,
+              label: 'الشركة',
+              value: ticket.companyName,
+              active: true,
+            ),
+            _TimelineItem(
+              icon: Icons.store_mall_directory_outlined,
+              label: 'الفرع',
+              value: ticket.branchName,
+              active: true,
+            ),
+            _TimelineItem(
+              icon: Icons.fingerprint,
+              label: 'البصمة',
+              value: ticket.representativeFingerPrint,
+              active: true,
+            ),
+            _TimelineItem(
+              icon: Icons.badge_outlined,
+              label: 'رقم المندوب',
+              value: ticket.representativeId.toString(),
+              active: true,
+              isLast: true,
             ),
           ],
         ),

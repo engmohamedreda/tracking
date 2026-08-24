@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/helper/blocobserver.dart';
 import 'core/helper/di/di.dart';
 import 'feature/auth/login/presentation/view/login_screen.dart';
+import 'feature/tickets/presentation/view/get_all_tickets_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,7 +77,10 @@ class MyApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: Color(0xFFEF4444)),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -122,7 +127,35 @@ class MyApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const LoginScreen(),
+      home: const _SessionGate(),
+    );
+  }
+}
+
+class _SessionGate extends StatelessWidget {
+  const _SessionGate();
+
+  Future<bool> _hasSession() async {
+    final preferences = await SharedPreferences.getInstance();
+    final token = preferences.getString('token');
+    return token != null && token.trim().isNotEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _hasSession(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return snapshot.data == true
+            ? const GetAllTicketsScreen()
+            : const LoginScreen();
+      },
     );
   }
 }
