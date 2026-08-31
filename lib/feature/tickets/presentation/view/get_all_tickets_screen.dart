@@ -8,6 +8,7 @@ import '../../../../core/helper/Api/ApiManager/ApiManager.dart';
 import '../../../../core/helper/Api/ApiManager/EndPoint.dart';
 import '../../../../core/helper/di/di.dart';
 import '../../../auth/login/presentation/view/login_screen.dart';
+import '../../../excel_dashboard/presentation/widget/excel_dashboard_button.dart';
 import '../../../ntickets/presentation/view/get_next_tickets_screen.dart';
 import 'tickets_tv_display_screen.dart';
 import '../../cubit/get_all_tickets_cubit.dart';
@@ -30,6 +31,7 @@ class GetAllTicketsScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('لوحة التذاكر'),
           actions: [
+            const ExcelDashboardButton(),
             BlocConsumer<
               DeleteDeviceAttendenceCubit,
               DeleteDeviceAttendenceState
@@ -85,7 +87,6 @@ class GetAllTicketsScreen extends StatelessWidget {
                 label: const Text('تسجيل الخروج'),
               ),
             ),
-            //  _ExportSurveysButton(),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 10),
               child: FilledButton.tonalIcon(
@@ -211,81 +212,6 @@ class GetAllTicketsScreen extends StatelessWidget {
 class _UsersTemplateButton extends StatefulWidget {
   @override
   State<_UsersTemplateButton> createState() => _UsersTemplateButtonState();
-}
-
-class _ExportSurveysButton extends StatefulWidget {
-  @override
-  State<_ExportSurveysButton> createState() => _ExportSurveysButtonState();
-}
-
-class _ExportSurveysButtonState extends State<_ExportSurveysButton> {
-  bool _isLoading = false;
-
-  Future<void> _exportSurveys() async {
-    if (_isLoading) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final response = await getIt<Apimanager>().getData(
-        endpoint: Endpoint.exportSurveys,
-        queryParameters: const {'page': 1, 'pageSize': 100},
-        options: Options(
-          responseType: ResponseType.bytes,
-          contentType:
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          validateStatus: (status) => true,
-        ),
-      );
-
-      final statusCode = response.statusCode ?? 0;
-      if (statusCode < 200 || statusCode >= 300) {
-        throw Exception('تعذر تصدير الاستبيانات (${response.statusCode})');
-      }
-
-      final data = response.data;
-      if (data is! List<int> || data.isEmpty) {
-        throw Exception('استجابة ملف الاستبيانات غير صحيحة');
-      }
-
-      final savedPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'حفظ الاستبيانات',
-        fileName: 'export-surveys.xlsx',
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-        bytes: Uint8List.fromList(data),
-      );
-
-      if (!mounted || savedPath == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تصدير الاستبيانات بنجاح')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('فشل تصدير الاستبيانات: $error')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 10),
-      child: FilledButton.tonalIcon(
-        onPressed: _isLoading ? null : _exportSurveys,
-        icon: _isLoading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.local_shipping_outlined),
-        label: const Text('تسليم'),
-      ),
-    );
-  }
 }
 
 class _UsersTemplateButtonState extends State<_UsersTemplateButton> {

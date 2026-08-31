@@ -32,6 +32,7 @@ class LoginUser {
   final String fullName;
   final int companyId;
   final int branchId;
+  final String roleName;
   final String companyName;
   final String branchName;
 
@@ -41,6 +42,7 @@ class LoginUser {
     required this.fullName,
     required this.companyId,
     required this.branchId,
+    required this.roleName,
     required this.companyName,
     required this.branchName,
   });
@@ -53,11 +55,19 @@ class LoginUser {
       userName: _asString(map['userName']),
       fullName: _asString(map['fullName']),
       companyId: _asInt(map['companyId']),
-      branchId: _asInt(map['branchId']),
+      // الـ API بيرجع brandId مش branchId في بعض الحالات.
+      branchId: _asInt(map['branchId'] ?? map['brandId']),
+      roleName: _asString(map['roleName']),
       companyName: _asString(map['companyName']),
       branchName: _asString(map['branchName']),
     );
   }
+
+  /// الـ SuperAdmin هو الوحيد اللي يشوف لوحة الإكسيل.
+  /// بنقارن من غير حساسية لحالة الحروف والمسافات لأن السيرفر
+  /// ممكن يرجعها بأشكال مختلفة.
+  bool get isSuperAdmin =>
+      roleName.replaceAll(' ', '').toLowerCase() == 'superadmin';
 }
 
 class LoginDevice {

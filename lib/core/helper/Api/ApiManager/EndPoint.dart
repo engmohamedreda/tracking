@@ -1,28 +1,61 @@
 class Endpoint {
   static const String newLogin =
-      'http://192.168.2.20:6060/api/Auth/Newlogin';
+      'http://elamircloud.elamirgroup.com:6060/api/Auth/Newlogin';
   static const String getAllTickets =
-      'http://192.168.2.20:6060/api/Tickets/GetAllTickets';
-  static const String getNextTickets =
-      'http://192.168.2.20:6060/api/Tickets/GetNextTickets';
+      'http://elamircloud.elamirgroup.com:6060/api/Tickets/GetAllTickets';
+  static const String getNextTickets ='http://elamircloud.elamirgroup.com:6060/api/Tickets/GetNextTickets';
   static const String deleteTickets =
-      'http://192.168.2.20:6060/api/Tickets/DeleteTickets';
+      'http://elamircloud.elamirgroup.com:6060/api/Tickets/DeleteTickets';
   static const String getAreaCode =
-      'http://192.168.2.20:6060/api/AreaCode/GetAreaCode';
+      'http://elamircloud.elamirgroup.com:6060/api/AreaCode/GetAreaCode';
   static const String getMobilesSerials =
-      'http://192.168.2.20:6060/api/AreaCode/GetMobilesSerials';
+      'http://elamircloud.elamirgroup.com:6060/api/AreaCode/GetMobilesSerials';
   static const String getSurveyQuestions =
-      'http://192.168.2.20:6060/api/Survay/Questions';
+      'http://elamircloud.elamirgroup.com:6060/api/Survay/Questions';
   static const String createSurvey =
-      'http://192.168.2.20:6060/api/Survay/CreateSurvay';
+      'http://elamircloud.elamirgroup.com:6060/api/Survay/CreateSurvay';
   static const String getSurveyById =
-      'http://192.168.2.20:6060/api/Survay/GetSurvayById';
+      'http://elamircloud.elamirgroup.com:6060/api/Survay/GetSurvayById';
   static const String exportSurveys =
-      'http://192.168.2.20:6060/api/Survay/export-survays';
+      'http://elamircloud.elamirgroup.com:6060/api/Survay/export-survays';
   static const String usersTemplate =
-      'http://192.168.2.20:6060/api/ExcelSheetProcess/users-template';
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/users-template';
+  static const String companiesTemplate =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/companies-template';
+  static const String branchesTemplate =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/branches-template';
+  static const String areaCodesTemplate =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/area-codes-template';
+  static const String mobilesTemplate =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/mobiles-template';
+  static const String representativesTemplate =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/representatives-template';
+  static const String importUsers =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-users';
+  static const String importCompany =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-company';
+  static const String importBranch =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-Branch';
+  static const String importAreaCode =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-AreaCode';
+  static const String importMobileSerials =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-MobileSerials';
+  static const String importRepresentative =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/import-Representative';
+  static const String getAllTransactions =
+      'http://elamircloud.elamirgroup.com:6060/api/Survay/GetAllTransactions';
+  static const String getCompany =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/Get_Company';
+  static const String getBranch =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/Get_Branch';
+  static const String getExcelAreaCodes =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/Get_AreaCodes';
+  static const String getExcelMobileSerials =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/Get_MobileSerials';
+  static const String getRepresentative =
+      'http://elamircloud.elamirgroup.com:6060/api/ExcelSheetProcess/Get_Representative';
   static const String deleteDeviceAttendence =
-      'http://192.168.2.20:6060/api/Fingerprint/DeleteDeviceAttendence';
+      'http://elamircloud.elamirgroup.com:6060/api/Fingerprint/DeleteDeviceAttendence';
   static String noShowTicket(int ticketId) =>
-      'http://192.168.2.20:6060/api/Tickets/NoShow/$ticketId';
+      'http://elamircloud.elamirgroup.com:6060/api/Tickets/NoShow/$ticketId';
 }

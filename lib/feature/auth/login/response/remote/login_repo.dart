@@ -91,6 +91,9 @@ class LoginRepo implements ILoginRepo {
     await prefs.setInt('branchId', loginResponse.user.branchId);
     await prefs.setString('companyName', loginResponse.user.companyName);
     await prefs.setString('branchName', loginResponse.user.branchName);
+
+    // الرول محتاجينها علشان نظهر لوحة الإكسيل للـ SuperAdmin بس.
+    await prefs.setString('roleName', loginResponse.user.roleName);
   }
 
   bool _isNoInternet(dynamic connectivityResult) {

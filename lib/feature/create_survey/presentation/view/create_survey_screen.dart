@@ -298,7 +298,7 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
 
   void _submit(BuildContext context) {
     if (widget.questions.isEmpty) {
-      _showMessage('مفيش أسئلة استبيان جاهزة');
+      _showMessage('لابوجد أسئلة استبيان جاهزة');
       return;
     }
 
