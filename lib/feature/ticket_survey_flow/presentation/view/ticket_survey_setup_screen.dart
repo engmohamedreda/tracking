@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,10 +20,7 @@ import '../../../survey_questions/model/survey_question_entity.dart';
 class TicketSurveySetupScreen extends StatelessWidget {
   final TicketEntity ticket;
 
-  const TicketSurveySetupScreen({
-    super.key,
-    required this.ticket,
-  });
+  const TicketSurveySetupScreen({super.key, required this.ticket});
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
 
   /// نفس قائمة الملاحظات المستخدمة في شاشة حفظ الاستبيان،
   /// عشان الملاحظة المختارة هنا تظهر هناك بنفس القيمة.
-  static const List<String> noteOptions = surveyNoteOptions;
+  static List<NoteOption> noteOptions = surveyNoteOptions;
 
   @override
   void dispose() {
@@ -116,9 +116,9 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
                               selectedMobileSerial = null;
                             });
                             if (value != null) {
-                              context
-                                  .read<GetMobileSerialsCubit>()
-                                  .load(areaCodeId: value.id);
+                              context.read<GetMobileSerialsCubit>().load(
+                                areaCodeId: value.id,
+                              );
                             }
                           },
                           selectedMobileSerial: selectedMobileSerial,
@@ -156,10 +156,7 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
                       },
                     ),
                     const SizedBox(height: 22),
-                    _OpenSurveyBar(
-                      enabled: canOpen,
-                      onPressed: _openSurvey,
-                    ),
+                    _OpenSurveyBar(enabled: canOpen, onPressed: _openSurvey),
                   ],
                 ),
               ),
@@ -172,7 +169,8 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
 
   bool _canOpenSurvey(BuildContext context) {
     final questionsState = context.watch<GetSurveyQuestionsCubit>().state;
-    final hasQuestions = questionsState is GetSurveyQuestionsSuccess &&
+    final hasQuestions =
+        questionsState is GetSurveyQuestionsSuccess &&
         questionsState.response.questions.isNotEmpty;
 
     return selectedOperation != null &&
@@ -225,17 +223,14 @@ class _TicketSurveySetupViewState extends State<_TicketSurveySetupView> {
     List<SurveyQuestionEntity> questions,
   ) {
     return questions.map((question) {
-      return CreateSurveyQuestionInput(
-        id: question.id,
-        title: question.title,
-      );
+      return CreateSurveyQuestionInput(id: question.id, title: question.title);
     }).toList();
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -360,7 +355,7 @@ class _HeaderInfo extends StatelessWidget {
   }
 }
 
-class _FormCard extends StatelessWidget {
+class _FormCard extends StatefulWidget {
   final List<String> operations;
   final String? selectedOperation;
   final ValueChanged<String?> onOperationChanged;
@@ -382,6 +377,13 @@ class _FormCard extends StatelessWidget {
   });
 
   @override
+  State<_FormCard> createState() => _FormCardState();
+}
+
+class _FormCardState extends State<_FormCard> {
+  List<String> selectedNotes = [];
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
@@ -400,23 +402,23 @@ class _FormCard extends StatelessWidget {
                 final isWide = constraints.maxWidth >= 640;
 
                 final operationField = DropdownButtonFormField<String>(
-                  value: selectedOperation,
+                  value: widget.selectedOperation,
                   decoration: const InputDecoration(
                     labelText: 'نوع العملية',
                     prefixIcon: Icon(Icons.swap_horiz),
                   ),
-                  items: operations.map((operation) {
+                  items: widget.operations.map((operation) {
                     return DropdownMenuItem<String>(
                       value: operation,
                       child: Text(operation),
                     );
                   }).toList(),
-                  onChanged: onOperationChanged,
+                  onChanged: widget.onOperationChanged,
                 );
 
                 final areaField = _AreaCodeDropdown(
-                  selectedAreaCode: selectedAreaCode,
-                  onChanged: onAreaCodeChanged,
+                  selectedAreaCode: widget.selectedAreaCode,
+                  onChanged: widget.onAreaCodeChanged,
                 );
 
                 if (!isWide) {
@@ -440,27 +442,81 @@ class _FormCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _MobileSerialDropdown(
-              selectedMobileSerial: selectedMobileSerial,
-              onChanged: onMobileChanged,
+              selectedMobileSerial: widget.selectedMobileSerial,
+              onChanged: widget.onMobileChanged,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value:
-                  _TicketSurveySetupViewState.noteOptions.contains(
-                    noteController.text,
-                  )
-                  ? noteController.text
-                  : null,
+            DropdownButtonFormField2<NoteOption>(
+              isExpanded: true,
+
               decoration: const InputDecoration(
                 labelText: 'ملاحظات',
                 prefixIcon: Icon(Icons.note_alt_outlined),
+                border: OutlineInputBorder(),
               ),
-              hint: const Text('اختر الملاحظة'),
+
+              hint: Text(
+                selectedNotes.isEmpty
+                    ? 'اختر الملاحظات'
+                    : selectedNotes.join(', '),
+              ),
+
               items: _TicketSurveySetupViewState.noteOptions.map((note) {
-                return DropdownMenuItem<String>(value: note, child: Text(note));
+                return DropdownItem<NoteOption>(
+                  value: note,
+                  child: Row(
+                    children: [
+                      IgnorePointer(
+                        child: Checkbox(
+                          value: selectedNotes.contains(note.value),
+                          onChanged: (checked) {
+                          },
+                        ),
+                      ),
+                      Expanded(child: Text(note.value ?? "")),
+                    ],
+                  ),
+                );
               }).toList(),
+
               onChanged: (value) {
-                noteController.text = value ?? '';
+                if (value == null) return;
+
+                setState(() {
+                  if (value.isAlone) {
+                    selectedNotes = [value.value ?? ""];
+                  } else {
+                    if (selectedNotes.contains("لا يوجد")) {
+                      selectedNotes = [];
+                    }
+                    if (selectedNotes.contains(value.value)) {
+                      selectedNotes.remove(value.value ?? "");
+                    } else {
+                      selectedNotes.add(value.value ?? "");
+                    }
+                  }
+                });
+                widget.noteController.text=selectedNotes.join(", ");
+              },
+
+              buttonStyleData: const FormFieldButtonStyleData(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+              ),
+              dropdownStyleData: const DropdownStyleData(maxHeight: 300),
+
+              selectedItemBuilder: (context) {
+                return _TicketSurveySetupViewState.noteOptions.map((note) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      selectedNotes.isEmpty
+                          ? 'اختر الملاحظات'
+                          : selectedNotes.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList();
               },
             ),
           ],
@@ -501,15 +557,12 @@ class _SectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(color: Color(0xFF64748B)),
-              ),
+              Text(subtitle, style: const TextStyle(color: Color(0xFF64748B))),
             ],
           ),
         ),
@@ -699,7 +752,10 @@ class _StatusCard extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _CheckLine(label: 'خطأ في تحميل أسئلة الاستبيان', done: false),
+                      _CheckLine(
+                        label: 'خطأ في تحميل أسئلة الاستبيان',
+                        done: false,
+                      ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: () =>
@@ -777,10 +833,7 @@ class _OpenSurveyBar extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
-  const _OpenSurveyBar({
-    required this.enabled,
-    required this.onPressed,
-  });
+  const _OpenSurveyBar({required this.enabled, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {

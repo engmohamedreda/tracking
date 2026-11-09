@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -10,22 +13,34 @@ import '../../model/survey_attachment_request.dart';
 import 'web_camera_dialog_stub.dart'
     if (dart.library.html) 'web_camera_dialog_web.dart'
     as web_camera;
+import 'windows_camera_dialog.dart';
+import '../../../../core/helper/platform/platform_helper.dart';
+
 class CreateSurveyQuestionInput {
   final int id;
   final String title;
+
   const CreateSurveyQuestionInput({required this.id, required this.title});
+}
+
+class NoteOption {
+  final String? value;
+  final bool isAlone;
+
+  NoteOption({this.value, this.isAlone = false});
 }
 
 /// المصدر الوحيد لقائمة الملاحظات.
 /// مستخدمة في شاشة تجهيز الاستبيان وشاشة حفظ الاستبيان،
 /// والقيم من غير مسافات زائدة عشان الـ trim ما يكسرش اختيار الـ Dropdown.
-const List<String> surveyNoteOptions = [
-  'لا يوجد',
-  'كسر في الاسكرين',
-  'بدون سكرين',
-  'بطاريه منتفخه',
-  'سوكت الشاحن لا يعمل',
+List<NoteOption> surveyNoteOptions = [
+  NoteOption(value: 'لا يوجد', isAlone: true),
+  NoteOption(value: 'كسر في الاسكرين'),
+  NoteOption(value: 'بدون سكرين'),
+  NoteOption(value: 'بطاريه منتفخه'),
+  NoteOption(value: 'سوكت الشاحن لا يعمل'),
 ];
+
 class CreateSurveyScreen extends StatefulWidget {
   final int companyId;
   final int brandId;
@@ -39,6 +54,7 @@ class CreateSurveyScreen extends StatefulWidget {
   final String status;
   final String initialNote;
   final List<SurveyAttachmentRequest> attachments;
+
   const CreateSurveyScreen({
     super.key,
     required this.companyId,
@@ -54,19 +70,22 @@ class CreateSurveyScreen extends StatefulWidget {
     this.initialNote = '',
     this.attachments = const [],
   });
+
   @override
   State<CreateSurveyScreen> createState() => _CreateSurveyScreenState();
 }
+
 class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
   final TextEditingController noteController = TextEditingController();
   final ImagePicker imagePicker = ImagePicker();
   final Map<int, bool> answers = {};
   late final List<SurveyAttachmentRequest> selectedAttachments;
   static const String fixedDateText = '2026-05-23T06:36:23.928Z';
-  static const List<String> noteOptions = surveyNoteOptions;
+  static List<NoteOption> noteOptions = surveyNoteOptions;
 
   /// أرقام الأسئلة (زي ما بتظهر على الشاشة) اللي إجابتها الافتراضية "نعم".
   static const Set<int> defaultYesQuestionNumbers = {2, 3};
+
   @override
   void initState() {
     super.initState();
@@ -81,12 +100,15 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
       );
     }
   }
+
   @override
   void dispose() {
     noteController.dispose();
     super.dispose();
   }
+
   int get yesCount => answers.values.where((value) => value).length;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -165,11 +187,13 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
                                         ticketId: widget.ticketId,
                                         status: widget.status,
                                         fixedDateText: fixedDateText,
+                                        initialNote: widget.initialNote,
                                       ),
                                       const SizedBox(height: 16),
                                       _NoteCard(
                                         controller: noteController,
                                         isLoading: isLoading,
+                                        initialNote: widget.initialNote,
                                       ),
                                       const SizedBox(height: 16),
                                       _AttachmentsCard(
@@ -266,6 +290,16 @@ class _CreateSurveyScreenState extends State<CreateSurveyScreen> {
   Future<void> _pickImageFromCamera() async {
     if (kIsWeb) {
       final attachment = await web_camera.showWebCameraDialog(context);
+      if (attachment == null || !mounted) return;
+
+      setState(() {
+        selectedAttachments.add(attachment);
+      });
+      return;
+    }
+
+    if (isWindowsPlatform) {
+      final attachment = await showWindowsCameraDialog(context);
       if (attachment == null || !mounted) return;
 
       setState(() {
@@ -423,6 +457,7 @@ class _SurveyDataCard extends StatelessWidget {
   final int ticketId;
   final String status;
   final String fixedDateText;
+  final String initialNote;
 
   const _SurveyDataCard({
     required this.companyId,
@@ -433,6 +468,7 @@ class _SurveyDataCard extends StatelessWidget {
     required this.ticketId,
     required this.status,
     required this.fixedDateText,
+    required this.initialNote,
   });
 
   @override
@@ -441,11 +477,30 @@ class _SurveyDataCard extends StatelessWidget {
   }
 }
 
-class _NoteCard extends StatelessWidget {
+class _NoteCard extends StatefulWidget {
   final TextEditingController controller;
   final bool isLoading;
+  final String initialNote;
 
-  const _NoteCard({required this.controller, required this.isLoading});
+  const _NoteCard({
+    required this.controller,
+    required this.isLoading,
+    required this.initialNote,
+  });
+
+  @override
+  State<_NoteCard> createState() => _NoteCardState();
+}
+
+class _NoteCardState extends State<_NoteCard> {
+  List<String> selectedNotes = [];
+
+  @override
+  void initState() {
+    selectedNotes = (widget.initialNote).split(", ");
+    widget.controller.text = widget.initialNote;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -461,25 +516,99 @@ class _NoteCard extends StatelessWidget {
               subtitle: 'اكتب أي ملاحظة خاصة بالاستبيان.',
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value:
-                  _CreateSurveyScreenState.noteOptions.contains(controller.text)
-                  ? controller.text
-                  : null,
+            DropdownButtonFormField2<NoteOption>(
+              isExpanded: true,
+
               decoration: const InputDecoration(
-                labelText: 'الملاحظة',
+                labelText: 'ملاحظات',
                 prefixIcon: Icon(Icons.note_alt_outlined),
+                border: OutlineInputBorder(),
               ),
-              hint: const Text('اختر الملاحظة'),
+
+              hint: Text(
+                selectedNotes.isEmpty
+                    ? 'اختر الملاحظات'
+                    : selectedNotes.join(', '),
+              ),
+
               items: _CreateSurveyScreenState.noteOptions.map((note) {
-                return DropdownMenuItem<String>(value: note, child: Text(note));
+                return DropdownItem<NoteOption>(
+                  value: note,
+                  child: Row(
+                    children: [
+                      IgnorePointer(
+                        child: Checkbox(
+                          value: selectedNotes.contains(note.value),
+                          onChanged: (checked) {},
+                        ),
+                      ),
+                      Expanded(child: Text(note.value ?? "")),
+                    ],
+                  ),
+                );
               }).toList(),
-              onChanged: isLoading
-                  ? null
-                  : (value) {
-                      controller.text = value ?? '';
-                    },
+
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  if (value.isAlone) {
+                    selectedNotes = [value.value ?? ""];
+                  } else {
+                    if (selectedNotes.contains("لا يوجد")) {
+                      selectedNotes = [];
+                    }
+                    if (selectedNotes.contains(value.value)) {
+                      selectedNotes.remove(value.value ?? "");
+                    } else {
+                      selectedNotes.add(value.value ?? "");
+                    }
+                  }
+                });
+                widget.controller.text = selectedNotes.join(", ");
+                log("selectedNotes $selectedNotes");
+              },
+
+              buttonStyleData: const FormFieldButtonStyleData(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+              ),
+              dropdownStyleData: const DropdownStyleData(maxHeight: 300),
+
+              selectedItemBuilder: (context) {
+                return _CreateSurveyScreenState.noteOptions.map((note) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      selectedNotes.isEmpty
+                          ? 'اختر الملاحظات'
+                          : selectedNotes.join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList();
+              },
             ),
+
+            // DropdownButtonFormField<NoteOption>(
+            //   value:
+            //       _CreateSurveyScreenState.noteOptions.contains(controller.text)
+            //       ? controller.text
+            //       : null,
+            //   decoration: const InputDecoration(
+            //     labelText: 'الملاحظة',
+            //     prefixIcon: Icon(Icons.note_alt_outlined),
+            //   ),
+            //   hint: const Text('اختر الملاحظة'),
+            //   items: _CreateSurveyScreenState.noteOptions.map((note) {
+            //     return DropdownMenuItem<String>(value: note, child: Text(note));
+            //   }).toList(),
+            //   onChanged: isLoading
+            //       ? null
+            //       : (value) {
+            //           controller.text = value ?? '';
+            //         },
+            // ),
           ],
         ),
       ),
